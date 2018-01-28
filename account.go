@@ -20,6 +20,7 @@ package schwift
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 
 	"github.com/gophercloud/gophercloud"
@@ -31,6 +32,8 @@ type Account struct {
 	//URL parts
 	baseURL string
 	name    string
+	//cache
+	metadata *AccountMetadata
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +87,61 @@ func (a *Account) Client() *gophercloud.ServiceClient {
 
 ////////////////////////////////////////////////////////////////////////////////
 // account metadata
+
+//AccountMetadata contains the metadata for an account. The `Raw` attribute
+//contains the raw set of headers returned from a HEAD or GET request on the
+//account. The other attributes contain the parsed values of common headers.
+type AccountMetadata struct {
+	Exists         bool
+	BytesUsed      uint64 //from X-Account-Bytes-Used
+	ContainerCount uint64 //from X-Account-Container-Count
+	ObjectCount    uint64 //from X-Account-Object-Count
+	//TODO account quota
+	Raw http.Header
+}
+
+//Metadata returns the metadata for this account. If the account does not exist,
+func (a *Account) Metadata() (AccountMetadata, error) {
+	if a.metadata != nil {
+		return *a.metadata, nil
+	}
+
+	resp, err := Request{
+		Method:            "HEAD",
+		ExpectStatusCodes: []int{200},
+	}.Do(a.client)
+	if err != nil {
+		return AccountMetadata{}, err
+	}
+
+	a.metadata, err = parseAccountMetadata(resp)
+	if err != nil {
+		return AccountMetadata{}, err
+	}
+	return *a.metadata, nil
+}
+
+func parseAccountMetadata(resp *http.Response) (*AccountMetadata, error) {
+	bytesUsed, err := parseUnsignedIntHeader(resp, "X-Account-Bytes-Used")
+	if err != nil {
+		return nil, err
+	}
+	containerCount, err := parseUnsignedIntHeader(resp, "X-Account-Container-Count")
+	if err != nil {
+		return nil, err
+	}
+	objectCount, err := parseUnsignedIntHeader(resp, "X-Account-Object-Count")
+	if err != nil {
+		return nil, err
+	}
+	return &AccountMetadata{
+		Exists:         true,
+		BytesUsed:      bytesUsed,
+		ContainerCount: containerCount,
+		ObjectCount:    objectCount,
+		Raw:            resp.Header,
+	}, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // container listing
