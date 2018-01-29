@@ -103,7 +103,10 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 
 	resp, err := client.ProviderClient.Request(r.Method, url, opts)
 	if err != nil {
-		return resp, err
+		if resp.StatusCode == 204 {
+			return resp, drainResponseBody(resp)
+		}
+		return resp, nil
 	}
 
 	//return success if error code matches expectation

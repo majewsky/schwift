@@ -59,17 +59,29 @@ func (e UnexpectedStatusCodeError) Error() string {
 //Is checks if the given error is an UnexpectedStatusCodeError for that status
 //code. For example:
 //
-//	metadata, err := container.Metadata()
+//	info, err := container.Info()
 //	if schwift.Is(err, http.StatusNotFound) {
 //		// ... create container ...
 //	} else if err != nil {
 //		// ... report error ...
 //	} else {
-//		// ... use metadata ...
+//		// ... use container info ...
 //	}
 func Is(err error, code int) bool {
 	if e, ok := err.(UnexpectedStatusCodeError); ok {
 		return e.ActualResponse.StatusCode == code
 	}
 	return false
+}
+
+//MalformedHeaderError is generated when a response from Swift contains a
+//malformed header.
+type MalformedHeaderError struct {
+	Key        string
+	ParseError error
+}
+
+//Error implements the builtin/error interface.
+func (e MalformedHeaderError) Error() string {
+	return "Bad header " + e.Key + ": " + e.ParseError.Error()
 }

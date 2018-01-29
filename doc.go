@@ -25,9 +25,9 @@ It uses Gophercloud (https://github.com/gophercloud/gophercloud) for
 authentication, so you usually start by obtaining a gophercloud.ServiceClient
 for Swift like so:
 
-	authOptions, err := openstack.AuthOptionsFromEnv()
+	authOptions, err := openstack.AuthOptionsFromEnv() // or build a gophercloud.AuthOptions instance yourself
 	provider, err := openstack.AuthenticatedClient(authOptions)
-	client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts {})
+	client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
 
 Or, if you use Swift's built-in authentication instead of Keystone:
 
@@ -44,16 +44,14 @@ API.
 Caching
 
 When a GET or HEAD request is sent by an Account, Container or Object instance,
-the metadata associated with that thing will be stored in that instance. You
-can therefore access metadata attributes directly via their accessors and
-everything just works, i.e. the first call to a getter will retrieve the
-metadata:
+the headers associated with that thing will be stored in that instance and not
+retrieved again.
 
 	obj := account.Container("foo").Object("bar")
 
-	t, err := obj.LastModified() //sends HTTP request "HEAD <storage-url>/foo/bar"
-	assert(err == nil)
-	t, err := obj.LastModified() //returns cached value immediately
+	hdr, err := obj.Headers() //sends HTTP request "HEAD <storage-url>/foo/bar"
+	...
+	hdr, err = obj.Headers()  //returns cached values immediately
 
 If this behavior is not desired, the Invalidate() method can be used to clear
 caches on any Account, Container or Object instance.
