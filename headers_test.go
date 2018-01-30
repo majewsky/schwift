@@ -61,7 +61,7 @@ func expectUint64(t *testing.T, actual uint64, expected uint64) {
 func expectString(t *testing.T, actual string, expected string) {
 	t.Helper()
 	if actual != expected {
-		t.Errorf("expected value %d, got %d instead\n", expected, actual)
+		t.Errorf("expected value %q, got %q instead\n", expected, actual)
 	}
 }
 

@@ -124,7 +124,7 @@ func (a *Account) Invalidate() {
 func (a *Account) Post(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
-		Options:           compileHeaders(headers, opts),
+		Options:           compileHeaders(&headers, opts),
 		ExpectStatusCodes: []int{204},
 	}.Do(a.client)
 	if err == nil {

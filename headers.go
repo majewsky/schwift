@@ -190,7 +190,50 @@ func parseHeaders(hdr http.Header, target interface{}) error {
 }
 
 func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
-	panic("TODO")
+	hdr := make(map[string]string)
+
+	foreachField(headers, func(fieldPtr interface{}, info fieldInfo) error {
+		//skip over fields without schwift field tag
+		if info.HeaderName == "" {
+			return nil
+		}
+
+		//decode header value into field depending on type
+		switch fieldPtr := fieldPtr.(type) {
+		case *string:
+			hdr[info.HeaderName] = *fieldPtr
+		case *uint64:
+			hdr[info.HeaderName] = strconv.FormatUint(*fieldPtr, 10)
+		case *map[string]string:
+			for key, val := range *fieldPtr {
+				if val == "" {
+					if info.RemoveHeaderName == "" {
+						//RemoveHeaderName is used by account and container metadata: e.g.
+						//"X-Account-Meta-Foo: bar" is reverted by "X-Remove-Account-Meta-Foo: x"
+						hdr[info.RemoveHeaderName+key] = "x"
+					} else {
+						//for object metadata, you just leave out the metadata fields that
+						//you want to clear, so we do nothing
+					}
+				} else {
+					hdr[info.HeaderName+key] = val
+				}
+			}
+		default:
+			panic(fmt.Sprintf("compileHeaders: cannot handle field type %T", fieldPtr))
+		}
+		return nil
+	})
+
+	//contents of `opts` overrides contents of `headers`
+	result := RequestOptions{Headers: hdr}
+	if opts != nil {
+		result.Values = opts.Values
+		for k, v := range opts.Headers {
+			result.Headers[k] = v
+		}
+	}
+	return result
 }
 
 type fieldInfo struct {
