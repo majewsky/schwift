@@ -193,8 +193,8 @@ func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 	hdr := make(map[string]string)
 
 	foreachField(headers, func(fieldPtr interface{}, info fieldInfo) error {
-		//skip over fields without schwift field tag
-		if info.HeaderName == "" {
+		//skip over fields without schwift field tag, and readonly fields
+		if info.HeaderName == "" || info.Access != "rw" {
 			return nil
 		}
 
