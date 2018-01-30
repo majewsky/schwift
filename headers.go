@@ -189,7 +189,7 @@ func parseHeaders(hdr http.Header, target interface{}) error {
 	})
 }
 
-func compileHeaders(headers interface{}) map[string]string {
+func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 	panic("TODO")
 }
 

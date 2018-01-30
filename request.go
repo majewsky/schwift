@@ -22,7 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	urlmodule "net/url"
+	"net/url"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
@@ -44,23 +44,29 @@ func init() {
 
 //Request contains the parameters that can be set in a request to the Swift API.
 type Request struct {
-	Method            string //"GET", "HEAD", "PUT", "POST" or "DELETE"
-	ContainerName     string //empty for requests on accounts
-	ObjectName        string //empty for requests on accounts/containers
-	AdditionalHeaders map[string]string
+	Method        string //"GET", "HEAD", "PUT", "POST" or "DELETE"
+	ContainerName string //empty for requests on accounts
+	ObjectName    string //empty for requests on accounts/containers
+	Options       RequestOptions
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
 	//schwift.UnexpectedStatusCodeError may be returned.
 	ExpectStatusCodes []int
 }
 
+//RequestOptions contains additional headers and values for request.
+type RequestOptions struct {
+	Headers map[string]string
+	Values  url.Values
+}
+
 //URL returns the full URL for this request.
-func (r Request) URL(client *gophercloud.ServiceClient) (string, error) {
-	url, err := urlmodule.Parse(client.Endpoint)
+func (r Request) URL(client *gophercloud.ServiceClient, values url.Values) (string, error) {
+	uri, err := url.Parse(client.Endpoint)
 	if err != nil {
 		return "", err
 	}
-	if !strings.HasSuffix(url.Path, "/") {
-		url.Path += "/"
+	if !strings.HasSuffix(uri.Path, "/") {
+		uri.Path += "/"
 	}
 
 	if r.ContainerName == "" {
@@ -71,10 +77,11 @@ func (r Request) URL(client *gophercloud.ServiceClient) (string, error) {
 		if strings.Contains(r.ContainerName, "/") {
 			return "", ErrMalformedContainerName
 		}
-		url.Path += r.ContainerName + "/" + r.ObjectName
+		uri.Path += r.ContainerName + "/" + r.ObjectName
 	}
 
-	return url.String(), nil
+	uri.RawQuery = values.Encode()
+	return uri.String(), nil
 }
 
 //Do executes this request on the given service client.
@@ -84,7 +91,7 @@ func (r Request) Do(client *gophercloud.ServiceClient) (*http.Response, error) {
 
 func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.Response, error) {
 	//build URL
-	url, err := r.URL(client)
+	uri, err := r.URL(client, r.Options.Values)
 	if err != nil {
 		return nil, err
 	}
@@ -97,11 +104,11 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 		"Accept":       "",
 		"Content-Type": "",
 	}
-	for key, value := range r.AdditionalHeaders {
+	for key, value := range r.Options.Headers {
 		opts.MoreHeaders[key] = value
 	}
 
-	resp, err := client.ProviderClient.Request(r.Method, url, opts)
+	resp, err := client.ProviderClient.Request(r.Method, uri, opts)
 	if err != nil {
 		if resp.StatusCode == 204 {
 			return resp, drainResponseBody(resp)

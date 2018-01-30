@@ -65,17 +65,22 @@ func expectString(t *testing.T, actual string, expected string) {
 	}
 }
 
-func expectError(t *testing.T, actual error, expected *string) {
+func expectError(t *testing.T, actual error, expected *string) (ok bool) {
 	t.Helper()
 	if actual == nil {
 		if expected != nil {
 			t.Errorf("expected error %q, got no error\n", *expected)
+			return false
 		}
 	} else {
 		if expected == nil {
 			t.Errorf("expected no error, got %q\n", actual.Error())
+			return false
 		} else if *expected != actual.Error() {
 			t.Errorf("expected error %q, got %q instead\n", *expected, actual.Error())
+			return false
 		}
 	}
+
+	return true
 }

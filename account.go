@@ -96,7 +96,7 @@ func (a *Account) Headers() (AccountHeaders, error) {
 
 	resp, err := Request{
 		Method:            "HEAD",
-		ExpectStatusCodes: []int{200},
+		ExpectStatusCodes: []int{204},
 	}.Do(a.client)
 	if err != nil {
 		return AccountHeaders{}, err
@@ -107,6 +107,7 @@ func (a *Account) Headers() (AccountHeaders, error) {
 	if err != nil {
 		return AccountHeaders{}, err
 	}
+	a.headers = &headers
 	return *a.headers, nil
 }
 
@@ -116,13 +117,19 @@ func (a *Account) Invalidate() {
 	a.headers = nil
 }
 
-//Post creates or updates the account using a POST request.
-func (a *Account) Post(headers AccountHeaders) error {
+//Post creates or updates the account using a POST request. To set arbitrary
+//request headers (and to add URL parameters, pass a non-nil *RequestOptions.
+//
+//A successful POST request implies Invalidate() since it changes account metadata.
+func (a *Account) Post(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
-		AdditionalHeaders: compileHeaders(headers),
+		Options:           compileHeaders(headers, opts),
 		ExpectStatusCodes: []int{204},
 	}.Do(a.client)
+	if err == nil {
+		a.Invalidate()
+	}
 	return err
 }
 
