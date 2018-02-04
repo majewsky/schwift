@@ -33,10 +33,10 @@ import (
 //headers, as noted in the tags next to each field. Well-known metadata headers
 //can be accessed in a type-safe way using the methods on this type.
 type AccountHeaders struct {
-	BytesUsed      uint64      `schwift:"ro,X-Account-Bytes-Used"`
-	ContainerCount uint64      `schwift:"ro,X-Account-Container-Count"`
-	ObjectCount    uint64      `schwift:"ro,X-Account-Object-Count"`
-	Metadata       http.Header `schwift:"rw,X-Account-Meta-"`
+	BytesUsed      uint64   `schwift:"ro,X-Account-Bytes-Used"`
+	ContainerCount uint64   `schwift:"ro,X-Account-Container-Count"`
+	ObjectCount    uint64   `schwift:"ro,X-Account-Object-Count"`
+	Metadata       Metadata `schwift:"rw,X-Account-Meta-"`
 	Raw            http.Header
 }
 
@@ -76,7 +76,7 @@ func (a AccountHeaders) TempURLKey2() StringField {
 //    headers.TempURLKey().Set(value + " changed")
 //    headers.TempURLKey().Clear()
 type StringField struct {
-	metadata http.Header
+	metadata Metadata
 	prefix   string
 	key      string
 }
@@ -110,7 +110,7 @@ func (f StringField) Clear() {
 //    ....
 //    headers.QuotaBytes().Clear()
 type UnsignedIntField struct {
-	metadata http.Header
+	metadata Metadata
 	prefix   string
 	key      string
 }
@@ -171,17 +171,17 @@ func parseHeaders(hdr http.Header, target interface{}) error {
 				return MalformedHeaderError{info.HeaderName, err}
 			}
 			*fieldPtr = value
-		case *http.Header:
+		case *Metadata:
 			//collect all headers with a prefix equal to `headerName`
-			result := make(http.Header)
-			for key, values := range hdr {
+			values := make(Metadata)
+			for key, value := range hdr {
 				key = textproto.CanonicalMIMEHeaderKey(key)
-				if len(values) > 0 && strings.HasPrefix(key, info.HeaderName) {
+				if strings.HasPrefix(key, info.HeaderName) {
 					key = strings.TrimPrefix(key, info.HeaderName)
-					result[key] = values
+					values[key] = value[0]
 				}
 			}
-			*fieldPtr = result
+			*fieldPtr = values
 		default:
 			panic(fmt.Sprintf("parseHeaders: cannot handle field type %T", fieldPtr))
 		}
@@ -205,14 +205,8 @@ func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 			hdr.Set(info.HeaderName, *fieldPtr)
 		case *uint64:
 			hdr.Set(info.HeaderName, strconv.FormatUint(*fieldPtr, 10))
-		case *http.Header:
-			for key, values := range *fieldPtr {
-				//Swift only supports one value per metadata field
-				value := ""
-				if len(values) > 0 {
-					value = values[0]
-				}
-
+		case *Metadata:
+			for key, value := range *fieldPtr {
 				//empty string means that this key shall be removed
 				if value == "" {
 					//for object metadata, a key is removed by just omitting it...

@@ -19,7 +19,6 @@
 package schwift
 
 import (
-	"net/http"
 	"testing"
 )
 
@@ -40,7 +39,7 @@ func TestAccountBasic(t *testing.T) {
 func TestAccountMetadata(t *testing.T) {
 	testWithAccount(t, func(a *Account) {
 		err := a.Post(AccountHeaders{
-			Metadata: http.Header{"Schwift-Test": {"first"}},
+			Metadata: NewMetadata("schwift-test", "first"),
 		}, nil)
 		if !expectError(t, err, nil) {
 			t.FailNow()
