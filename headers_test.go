@@ -31,7 +31,6 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 		"X-Account-Container-Count":  {"23"},
 		"X-Account-Meta-Quota-Bytes": {"1048576"},
 		"X-Account-Meta-foo":         {"bar"},
-		"X-Account-Meta-FOO":         {"baz"},
 	}, &headers)
 
 	expectError(t, err, nil)
@@ -43,10 +42,9 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 	expectError(t, err, nil)
 	expectUint64(t, value, 1048576)
 
-	//metadata keys are case-insensitive (wtf Swift)
-	expectString(t, headers.Metadata["foo"], "bar")
-	expectString(t, headers.Metadata["Foo"], "")
-	expectString(t, headers.Metadata["FOO"], "baz")
+	expectString(t, headers.Metadata.Get("foo"), "bar")
+	expectString(t, headers.Metadata.Get("Foo"), "bar")
+	expectString(t, headers.Metadata.Get("FOO"), "bar")
 }
 
 //TODO TestParseAccountHeadersError

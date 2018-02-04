@@ -21,6 +21,7 @@ package schwift
 import (
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"reflect"
 	"strconv"
 	"strings"
@@ -32,10 +33,10 @@ import (
 //headers, as noted in the tags next to each field. Well-known metadata headers
 //can be accessed in a type-safe way using the methods on this type.
 type AccountHeaders struct {
-	BytesUsed      uint64            `schwift:"ro,X-Account-Bytes-Used"`
-	ContainerCount uint64            `schwift:"ro,X-Account-Container-Count"`
-	ObjectCount    uint64            `schwift:"ro,X-Account-Object-Count"`
-	Metadata       map[string]string `schwift:"rw,X-Account-Meta-,X-Remove-Account-Meta-"`
+	BytesUsed      uint64      `schwift:"ro,X-Account-Bytes-Used"`
+	ContainerCount uint64      `schwift:"ro,X-Account-Container-Count"`
+	ObjectCount    uint64      `schwift:"ro,X-Account-Object-Count"`
+	Metadata       http.Header `schwift:"rw,X-Account-Meta-"`
 	Raw            http.Header
 }
 
@@ -44,7 +45,6 @@ func (a AccountHeaders) QuotaBytes() UnsignedIntField {
 	return UnsignedIntField{
 		a.Metadata,
 		"X-Account-Meta-", "Quota-Bytes",
-		false,
 	}
 }
 
@@ -53,7 +53,6 @@ func (a AccountHeaders) TempURLKey() StringField {
 	return StringField{
 		a.Metadata,
 		"X-Account-Meta-", "Temp-URL-Key",
-		false,
 	}
 }
 
@@ -62,7 +61,6 @@ func (a AccountHeaders) TempURLKey2() StringField {
 	return StringField{
 		a.Metadata,
 		"X-Account-Meta-", "Temp-URL-Key-2",
-		false,
 	}
 }
 
@@ -78,31 +76,26 @@ func (a AccountHeaders) TempURLKey2() StringField {
 //    headers.TempURLKey().Set(value + " changed")
 //    headers.TempURLKey().Clear()
 type StringField struct {
-	metadata        map[string]string
-	prefix          string
-	key             string
-	clearByDeleting bool
+	metadata http.Header
+	prefix   string
+	key      string
 }
 
 //Get returns the value for this key, or the empty string if the key does not exist.
 func (f StringField) Get() string {
-	return f.metadata[f.key]
+	return f.metadata.Get(f.key)
 }
 
 //Set writes a new value for this key into the original AccountHeaders,
 //ContainerHeaders or ObjectHeaders instance.
 func (f StringField) Set(value string) {
-	f.metadata[f.key] = value
+	f.metadata.Set(f.key, value)
 }
 
 //Clear removes this key from the original AccountHeaders, ContainerHeaders or
 //ObjectHeaders instance.
 func (f StringField) Clear() {
-	if f.clearByDeleting {
-		delete(f.metadata, f.key)
-	} else {
-		f.metadata[f.key] = ""
-	}
+	f.metadata.Set(f.key, "")
 }
 
 //UnsignedIntField is a helper type used in the interface of AccountHeaders,
@@ -110,19 +103,30 @@ func (f StringField) Clear() {
 //
 //    var headers AccountHeaders
 //    ...
-//    value, err := headers.QuotaBytes().Get()
-//    headers.QuotaBytes().Set(value * 2)
+//    if headers.QuotaBytes.Exists() {
+//        value, err := headers.QuotaBytes().Get()
+//        headers.QuotaBytes().Set(value * 2)
+//    }
+//    ....
 //    headers.QuotaBytes().Clear()
 type UnsignedIntField struct {
-	metadata        map[string]string
-	prefix          string
-	key             string
-	clearByDeleting bool
+	metadata http.Header
+	prefix   string
+	key      string
+}
+
+//Exists returns whether there is a value for this key.
+func (f UnsignedIntField) Exists() bool {
+	return f.metadata.Get(f.key) != ""
 }
 
 //Get returns the value for this key, or 0 if the key does not exist.
 func (f UnsignedIntField) Get() (uint64, error) {
-	value, err := strconv.ParseUint(f.metadata[f.key], 10, 64)
+	str := f.metadata.Get(f.key)
+	if str == "" {
+		return 0, nil
+	}
+	value, err := strconv.ParseUint(str, 10, 64)
 	if err != nil {
 		err = MalformedHeaderError{Key: f.prefix + f.key, ParseError: err}
 	}
@@ -132,17 +136,13 @@ func (f UnsignedIntField) Get() (uint64, error) {
 //Set writes a new value for this key into the original AccountHeaders,
 //ContainerHeaders or ObjectHeaders instance.
 func (f UnsignedIntField) Set(value uint64) {
-	f.metadata[f.key] = strconv.FormatUint(value, 10)
+	f.metadata.Set(f.key, strconv.FormatUint(value, 10))
 }
 
 //Clear removes this key from the original AccountHeaders, ContainerHeaders or
 //ObjectHeaders instance.
 func (f UnsignedIntField) Clear() {
-	if f.clearByDeleting {
-		delete(f.metadata, f.key)
-	} else {
-		f.metadata[f.key] = ""
-	}
+	f.metadata.Set(f.key, "")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,8 +151,8 @@ func (f UnsignedIntField) Clear() {
 func parseHeaders(hdr http.Header, target interface{}) error {
 	return foreachField(target, func(fieldPtr interface{}, info fieldInfo) error {
 		//populate the .Raw field that all input types share
-		if ptr, ok := fieldPtr.(*http.Header); ok {
-			*ptr = hdr
+		if info.FieldName == "Raw" {
+			*(fieldPtr.(*http.Header)) = hdr
 			return nil
 		}
 
@@ -171,16 +171,17 @@ func parseHeaders(hdr http.Header, target interface{}) error {
 				return MalformedHeaderError{info.HeaderName, err}
 			}
 			*fieldPtr = value
-		case *map[string]string:
+		case *http.Header:
 			//collect all headers with a prefix equal to `headerName`
-			values := make(map[string]string)
-			for key, value := range hdr {
-				if len(value) > 0 && strings.HasPrefix(key, info.HeaderName) {
+			result := make(http.Header)
+			for key, values := range hdr {
+				key = textproto.CanonicalMIMEHeaderKey(key)
+				if len(values) > 0 && strings.HasPrefix(key, info.HeaderName) {
 					key = strings.TrimPrefix(key, info.HeaderName)
-					values[key] = value[0]
+					result[key] = values
 				}
 			}
-			*fieldPtr = values
+			*fieldPtr = result
 		default:
 			panic(fmt.Sprintf("parseHeaders: cannot handle field type %T", fieldPtr))
 		}
@@ -190,7 +191,7 @@ func parseHeaders(hdr http.Header, target interface{}) error {
 }
 
 func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
-	hdr := make(map[string]string)
+	hdr := make(http.Header)
 
 	foreachField(headers, func(fieldPtr interface{}, info fieldInfo) error {
 		//skip over fields without schwift field tag, and readonly fields
@@ -201,22 +202,33 @@ func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 		//decode header value into field depending on type
 		switch fieldPtr := fieldPtr.(type) {
 		case *string:
-			hdr[info.HeaderName] = *fieldPtr
+			hdr.Set(info.HeaderName, *fieldPtr)
 		case *uint64:
-			hdr[info.HeaderName] = strconv.FormatUint(*fieldPtr, 10)
-		case *map[string]string:
-			for key, val := range *fieldPtr {
-				if val == "" {
-					if info.RemoveHeaderName == "" {
-						//RemoveHeaderName is used by account and container metadata: e.g.
-						//"X-Account-Meta-Foo: bar" is reverted by "X-Remove-Account-Meta-Foo: x"
-						hdr[info.RemoveHeaderName+key] = "x"
+			hdr.Set(info.HeaderName, strconv.FormatUint(*fieldPtr, 10))
+		case *http.Header:
+			for key, values := range *fieldPtr {
+				//Swift only supports one value per metadata field
+				value := ""
+				if len(values) > 0 {
+					value = values[0]
+				}
+
+				//empty string means that this key shall be removed
+				if value == "" {
+					//for object metadata, a key is removed by just omitting it...
+					if info.HeaderName != "X-Object-Meta-" {
+						//...for container and account metadata, a key is removed by
+						//setting its value to the empty string
+						hdr.Set(info.HeaderName+key, "")
 					} else {
 						//for object metadata, you just leave out the metadata fields that
 						//you want to clear, so we do nothing
 					}
 				} else {
-					hdr[info.HeaderName+key] = val
+					//NOTE: The spec says that `value` needs to be percent-encoded, but
+					//neither python-swiftclient nor ncw/swift do so. If in doubt, we
+					//follow the de-facto standards rather than the spec.
+					hdr.Set(info.HeaderName+key, value)
 				}
 			}
 		default:
@@ -237,9 +249,9 @@ func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 }
 
 type fieldInfo struct {
-	Access           string
-	HeaderName       string
-	RemoveHeaderName string
+	FieldName  string
+	Access     string
+	HeaderName string
 }
 
 func foreachField(value interface{}, callback func(fieldPtr interface{}, info fieldInfo) error) error {
@@ -255,14 +267,13 @@ func foreachField(value interface{}, callback func(fieldPtr interface{}, info fi
 		fieldPtr := rv.Field(idx).Addr().Interface()
 
 		//decode schwift:"<access>,<header-name>" tag
-		tagValues := strings.SplitN(fieldType.Tag.Get("schwift"), ",", 3)
-		var fieldInfo fieldInfo
-		if len(tagValues) >= 2 {
+		tagValues := strings.SplitN(fieldType.Tag.Get("schwift"), ",", 2)
+		fieldInfo := fieldInfo{
+			FieldName: fieldType.Name,
+		}
+		if len(tagValues) == 2 {
 			fieldInfo.Access = tagValues[0]
 			fieldInfo.HeaderName = tagValues[1]
-			if len(tagValues) >= 3 {
-				fieldInfo.RemoveHeaderName = tagValues[2]
-			}
 		}
 
 		err := callback(fieldPtr, fieldInfo)

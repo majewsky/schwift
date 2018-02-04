@@ -48,6 +48,7 @@ type Request struct {
 	ContainerName string //empty for requests on accounts
 	ObjectName    string //empty for requests on accounts/containers
 	Options       RequestOptions
+	Body          io.Reader
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
 	//schwift.UnexpectedStatusCodeError may be returned.
 	ExpectStatusCodes []int
@@ -55,7 +56,7 @@ type Request struct {
 
 //RequestOptions contains additional headers and values for request.
 type RequestOptions struct {
-	Headers map[string]string
+	Headers http.Header
 	Values  url.Values
 }
 
@@ -90,30 +91,31 @@ func (r Request) Do(client *gophercloud.ServiceClient) (*http.Response, error) {
 }
 
 func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.Response, error) {
+	provider := client.ProviderClient
+
 	//build URL
 	uri, err := r.URL(client, r.Options.Values)
 	if err != nil {
 		return nil, err
 	}
 
-	//override gophercloud's error handling
-	opts := &gophercloud.RequestOpts{OkCodes: okCodes}
-
-	//override gophercloud's default headers
-	opts.MoreHeaders = map[string]string{
-		"Accept":       "",
-		"Content-Type": "",
-	}
-	for key, value := range r.Options.Headers {
-		opts.MoreHeaders[key] = value
-	}
-
-	resp, err := client.ProviderClient.Request(r.Method, uri, opts)
+	//build request
+	req, err := http.NewRequest(r.Method, uri, r.Body)
 	if err != nil {
-		if resp.StatusCode == 204 {
-			return resp, drainResponseBody(resp)
-		}
-		return resp, nil
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", provider.UserAgent.Join())
+	for key, values := range r.Options.Headers {
+		req.Header[key] = values
+	}
+	for key, value := range provider.AuthenticatedHeaders() {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := provider.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
 	}
 
 	//return success if error code matches expectation
@@ -127,14 +129,13 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 		}
 	}
 
-	//since we override gophercloud's error handling, we need to handle token
-	//expiry ourselves
+	//detect expired token
 	if resp.StatusCode == http.StatusUnauthorized && !afterReauth {
 		err := drainResponseBody(resp)
 		if err != nil {
 			return nil, err
 		}
-		err = client.Reauthenticate(resp.Request.Header.Get("X-Auth-Token"))
+		err = provider.Reauthenticate(resp.Request.Header.Get("X-Auth-Token"))
 		if err != nil {
 			return nil, err
 		}
