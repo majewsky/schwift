@@ -50,7 +50,24 @@ func NewMetadata(args ...string) Metadata {
 	return m
 }
 
+//Clear sets the value to this key to the empty string, such that a Post() with
+//this Metadata will remove the existing value from this metadata key on the server.
+func (m Metadata) Clear(key string) {
+	m.Set(key, "")
+}
+
 //Del works just like http.Header.Del().
+//
+//Del deletes a key from the Metadata instance. When the Metadata instance
+//is then sent to the server with Post(), Del() has different effects depending
+//on context because of Swift's inconsistent API:
+//
+//For account or container metadata, a key which has been deleted with Del() will
+//remain unchanged on the server. To remove the key on the server, use Clear()
+//instead.
+//
+//For object metadata, deleting a key will cause that key to be deleted on the
+//server. Del() is identical to Clear() in this case.
 func (m Metadata) Del(key string) {
 	k := textproto.CanonicalMIMEHeaderKey(key)
 	delete(m, k)

@@ -95,7 +95,7 @@ func (f StringField) Set(value string) {
 //Clear removes this key from the original AccountHeaders, ContainerHeaders or
 //ObjectHeaders instance.
 func (f StringField) Clear() {
-	f.metadata.Set(f.key, "")
+	f.metadata.Clear(f.key)
 }
 
 //UnsignedIntField is a helper type used in the interface of AccountHeaders,
@@ -142,7 +142,7 @@ func (f UnsignedIntField) Set(value uint64) {
 //Clear removes this key from the original AccountHeaders, ContainerHeaders or
 //ObjectHeaders instance.
 func (f UnsignedIntField) Clear() {
-	f.metadata.Set(f.key, "")
+	f.metadata.Clear(f.key)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -214,9 +214,6 @@ func compileHeaders(headers interface{}, opts *RequestOptions) RequestOptions {
 						//...for container and account metadata, a key is removed by
 						//setting its value to the empty string
 						hdr.Set(info.HeaderName+key, "")
-					} else {
-						//for object metadata, you just leave out the metadata fields that
-						//you want to clear, so we do nothing
 					}
 				} else {
 					//NOTE: The spec says that `value` needs to be percent-encoded, but

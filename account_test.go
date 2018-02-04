@@ -38,8 +38,12 @@ func TestAccountBasic(t *testing.T) {
 
 func TestAccountMetadata(t *testing.T) {
 	testWithAccount(t, func(a *Account) {
+		//test creating some metadata
 		err := a.Post(AccountHeaders{
-			Metadata: NewMetadata("schwift-test", "first"),
+			Metadata: NewMetadata(
+				"schwift-test1", "first",
+				"schwift-test2", "second",
+			),
 		}, nil)
 		if !expectError(t, err, nil) {
 			t.FailNow()
@@ -49,6 +53,42 @@ func TestAccountMetadata(t *testing.T) {
 		if !expectError(t, err, nil) {
 			t.FailNow()
 		}
-		expectString(t, hdr.Metadata.Get("schwift-test"), "first")
+		expectString(t, hdr.Metadata.Get("schwift-test1"), "first")
+		expectString(t, hdr.Metadata.Get("schwift-test2"), "second")
+
+		//test deleting some metadata
+		m := make(Metadata)
+		m.Clear("schwift-test1")
+		err = a.Post(AccountHeaders{
+			Metadata: m,
+		}, nil)
+		if !expectError(t, err, nil) {
+			t.FailNow()
+		}
+
+		hdr, err = a.Headers()
+		if !expectError(t, err, nil) {
+			t.FailNow()
+		}
+		expectString(t, hdr.Metadata.Get("schwift-test1"), "")
+		expectString(t, hdr.Metadata.Get("schwift-test2"), "second")
+
+		//test updating some metadata
+		m = make(Metadata)
+		m.Set("schwift-test2", "changed")
+		err = a.Post(AccountHeaders{
+			Metadata: m,
+		}, nil)
+		if !expectError(t, err, nil) {
+			t.FailNow()
+		}
+
+		hdr, err = a.Headers()
+		if !expectError(t, err, nil) {
+			t.FailNow()
+		}
+		expectString(t, hdr.Metadata.Get("schwift-test1"), "")
+		expectString(t, hdr.Metadata.Get("schwift-test2"), "changed")
+
 	})
 }
