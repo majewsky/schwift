@@ -35,9 +35,6 @@ type Account struct {
 	headers *AccountHeaders
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// interface to Gophercloud, endpoint inspection and manipulation
-
 var endpointURLRegexp = regexp.MustCompile(`^(.*/)v1/(.*)/$`)
 
 //AccountFromClient takes a gophercloud.ServiceClient which wraps a Swift
@@ -84,9 +81,6 @@ func (a *Account) Client() *gophercloud.ServiceClient {
 	return a.client
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// account headers
-
 //Headers returns the AccountHeaders for this account. If the AccountHeaders
 //has not been cached yet, a HEAD request is issued on the account.
 func (a *Account) Headers() (AccountHeaders, error) {
@@ -117,11 +111,11 @@ func (a *Account) Invalidate() {
 	a.headers = nil
 }
 
-//Post creates or updates the account using a POST request. To set arbitrary
-//request headers (and to add URL parameters, pass a non-nil *RequestOptions.
+//Update updates the account using a POST request. To set arbitrary request
+//headers (and to add URL parameters), pass a non-nil *RequestOptions.
 //
-//A successful POST request implies Invalidate() since it changes account metadata.
-func (a *Account) Post(headers AccountHeaders, opts *RequestOptions) error {
+//A successful POST request implies Invalidate() since it may change metadata.
+func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
 		Options:           compileHeaders(&headers, opts),
@@ -133,5 +127,23 @@ func (a *Account) Post(headers AccountHeaders, opts *RequestOptions) error {
 	return err
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// container listing
+//Create creates the account using a PUT request. To set arbitrary request
+//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//
+//Note that this operation is only available to reseller admins, not to regular
+//users.
+//
+//A successful PUT request implies Invalidate() since it may change metadata.
+func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
+	_, err := Request{
+		Method:            "POST",
+		Options:           compileHeaders(&headers, opts),
+		ExpectStatusCodes: []int{201, 202},
+	}.Do(a.client)
+	if err == nil {
+		a.Invalidate()
+	}
+	return err
+}
+
+// TODO container listing

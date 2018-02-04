@@ -49,11 +49,14 @@ func (e UnexpectedStatusCodeError) Error() string {
 	for idx, code := range e.ExpectedStatusCodes {
 		codeStrs[idx] = strconv.Itoa(code)
 	}
-	return fmt.Sprintf("expected %s response, got %d instead: %s",
+	msg := fmt.Sprintf("expected %s response, got %d instead",
 		strings.Join(codeStrs, "/"),
 		e.ActualResponse.StatusCode,
-		string(e.ResponseBody),
 	)
+	if len(e.ResponseBody) > 0 {
+		msg += ": " + string(e.ResponseBody)
+	}
+	return msg
 }
 
 //Is checks if the given error is an UnexpectedStatusCodeError for that status

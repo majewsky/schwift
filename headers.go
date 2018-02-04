@@ -64,6 +64,17 @@ func (a AccountHeaders) TempURLKey2() StringField {
 	}
 }
 
+//ContainerHeaders contains the headers for an account. The Raw attribute
+//contains the original set of headers returned from a HEAD or GET request on
+//the account. The other attributes contain the parsed values of common
+//headers, as noted in the tags next to each field. Well-known metadata headers
+//can be accessed in a type-safe way using the methods on this type.
+type ContainerHeaders struct {
+	Metadata Metadata `schwift:"rw,X-Container-Meta-"`
+	Raw      http.Header
+	//TODO map well-known headers
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // field types
 

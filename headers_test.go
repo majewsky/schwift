@@ -33,13 +33,13 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 		"X-Account-Meta-foo":         {"bar"},
 	}, &headers)
 
-	expectError(t, err, nil)
+	expectError(t, err, "")
 	expectUint64(t, headers.BytesUsed, 1234)
 	expectUint64(t, headers.ContainerCount, 23)
 	expectUint64(t, headers.ObjectCount, 42)
 
 	value, err := headers.QuotaBytes().Get()
-	expectError(t, err, nil)
+	expectError(t, err, "")
 	expectUint64(t, value, 1048576)
 
 	expectString(t, headers.Metadata.Get("foo"), "bar")
@@ -48,6 +48,13 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 }
 
 //TODO TestParseAccountHeadersError
+
+func expectBool(t *testing.T, actual bool, expected bool) {
+	t.Helper()
+	if actual != expected {
+		t.Errorf("expected value %#v, got %#v instead\n", expected, actual)
+	}
+}
 
 func expectUint64(t *testing.T, actual uint64, expected uint64) {
 	t.Helper()
@@ -63,19 +70,19 @@ func expectString(t *testing.T, actual string, expected string) {
 	}
 }
 
-func expectError(t *testing.T, actual error, expected *string) (ok bool) {
+func expectError(t *testing.T, actual error, expected string) (ok bool) {
 	t.Helper()
 	if actual == nil {
-		if expected != nil {
-			t.Errorf("expected error %q, got no error\n", *expected)
+		if expected != "" {
+			t.Errorf("expected error %q, got no error\n", expected)
 			return false
 		}
 	} else {
-		if expected == nil {
+		if expected == "" {
 			t.Errorf("expected no error, got %q\n", actual.Error())
 			return false
-		} else if *expected != actual.Error() {
-			t.Errorf("expected error %q, got %q instead\n", *expected, actual.Error())
+		} else if expected != actual.Error() {
+			t.Errorf("expected error %q, got %q instead\n", expected, actual.Error())
 			return false
 		}
 	}
