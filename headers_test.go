@@ -24,23 +24,20 @@ import (
 )
 
 func TestParseAccountHeadersSuccess(t *testing.T) {
-	var headers AccountHeaders
-	err := parseHeaders(http.Header{
+	headers := NewAccountHeaders()
+	headers.FromHTTP(http.Header{
 		"X-Account-Bytes-Used":       {"1234"},
 		"X-Account-Object-Count":     {"42"},
 		"X-Account-Container-Count":  {"23"},
 		"X-Account-Meta-Quota-Bytes": {"1048576"},
 		"X-Account-Meta-foo":         {"bar"},
-	}, &headers)
+	})
 
-	expectError(t, err, "")
-	expectUint64(t, headers.BytesUsed, 1234)
-	expectUint64(t, headers.ContainerCount, 23)
-	expectUint64(t, headers.ObjectCount, 42)
-
-	value, err := headers.QuotaBytes().Get()
-	expectError(t, err, "")
-	expectUint64(t, value, 1048576)
+	expectError(t, headers.Validate(), "")
+	expectUint64(t, headers.BytesUsed.Get(), 1234)
+	expectUint64(t, headers.ContainerCount.Get(), 23)
+	expectUint64(t, headers.ObjectCount.Get(), 42)
+	expectUint64(t, headers.QuotaBytes.Get(), 1048576)
 
 	expectString(t, headers.Metadata.Get("foo"), "bar")
 	expectString(t, headers.Metadata.Get("Foo"), "bar")

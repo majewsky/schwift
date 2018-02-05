@@ -38,7 +38,7 @@ func TestContainerExistence(t *testing.T) {
 		expectBool(t, Is(err, http.StatusNotFound), true)
 		expectBool(t, Is(err, http.StatusNoContent), false)
 
-		err = c.Create(ContainerHeaders{}, nil)
+		err = c.Create(NewContainerHeaders(), nil)
 		expectError(t, err, "")
 
 		exists, err = c.Exists()

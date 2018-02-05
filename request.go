@@ -47,7 +47,8 @@ type Request struct {
 	Method        string //"GET", "HEAD", "PUT", "POST" or "DELETE"
 	ContainerName string //empty for requests on accounts
 	ObjectName    string //empty for requests on accounts/containers
-	Options       RequestOptions
+	Headers       http.Header
+	Options       *RequestOptions
 	Body          io.Reader
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
 	//schwift.UnexpectedStatusCodeError may be returned.
@@ -56,8 +57,7 @@ type Request struct {
 
 //RequestOptions contains additional headers and values for request.
 type RequestOptions struct {
-	Headers http.Header
-	Values  url.Values
+	Values url.Values
 }
 
 //URL returns the full URL for this request.
@@ -94,7 +94,11 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 	provider := client.ProviderClient
 
 	//build URL
-	uri, err := r.URL(client, r.Options.Values)
+	var values url.Values
+	if r.Options != nil {
+		values = r.Options.Values
+	}
+	uri, err := r.URL(client, values)
 	if err != nil {
 		return nil, err
 	}
@@ -105,10 +109,10 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", provider.UserAgent.Join())
-	for key, values := range r.Options.Headers {
-		req.Header[key] = values
+	for k, v := range r.Headers {
+		req.Header[k] = v
 	}
+	req.Header.Set("User-Agent", provider.UserAgent.Join())
 	for key, value := range provider.AuthenticatedHeaders() {
 		req.Header.Set(key, value)
 	}

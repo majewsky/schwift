@@ -96,10 +96,11 @@ func (a *Account) Headers() (AccountHeaders, error) {
 		return AccountHeaders{}, err
 	}
 
-	var headers AccountHeaders
-	err = parseHeaders(resp.Header, &headers)
+	headers := NewAccountHeaders()
+	headers.FromHTTP(resp.Header)
+	err = headers.Validate()
 	if err != nil {
-		return AccountHeaders{}, err
+		return headers, err
 	}
 	a.headers = &headers
 	return *a.headers, nil
@@ -111,14 +112,15 @@ func (a *Account) Invalidate() {
 	a.headers = nil
 }
 
-//Update updates the account using a POST request. To set arbitrary request
-//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//Update updates the account using a POST request. To add URL parameters, pass
+//a non-nil *RequestOptions.
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
-		Options:           compileHeaders(&headers, opts),
+		Headers:           headers.ToHTTP(),
+		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(a.client)
 	if err == nil {
@@ -127,8 +129,8 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 	return err
 }
 
-//Create creates the account using a PUT request. To set arbitrary request
-//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//Create creates the account using a PUT request. To add URL parameters, pass
+//a non-nil *RequestOptions.
 //
 //Note that this operation is only available to reseller admins, not to regular
 //users.
@@ -136,8 +138,9 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 //A successful PUT request implies Invalidate() since it may change metadata.
 func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
-		Method:            "POST",
-		Options:           compileHeaders(&headers, opts),
+		Method:            "PUT",
+		Headers:           headers.ToHTTP(),
+		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 	}.Do(a.client)
 	if err == nil {

@@ -79,17 +79,18 @@ func (c *Container) Headers() (ContainerHeaders, error) {
 		return ContainerHeaders{}, err
 	}
 
-	var headers ContainerHeaders
-	err = parseHeaders(resp.Header, &headers)
+	headers := NewContainerHeaders()
+	headers.FromHTTP(resp.Header)
+	err = headers.Validate()
 	if err != nil {
-		return ContainerHeaders{}, err
+		return headers, err
 	}
 	c.headers = &headers
 	return *c.headers, nil
 }
 
-//Update updates the container using a POST request. To set arbitrary request
-//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//Update updates the container using a POST request. To add URL parameters, pass
+//a non-nil *RequestOptions.
 //
 //If you are not sure whether the container exists, use Create() instead.
 //
@@ -98,7 +99,8 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 	_, err := Request{
 		Method:            "POST",
 		ContainerName:     c.name,
-		Options:           compileHeaders(&headers, opts),
+		Headers:           headers.ToHTTP(),
+		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(c.a.client)
 	if err == nil {
@@ -107,8 +109,8 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 	return err
 }
 
-//Create creates the container using a PUT request. To set arbitrary request
-//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//Create creates the container using a PUT request. To add URL parameters, pass
+//a non-nil *RequestOptions.
 //
 //This function can be used regardless of whether the container exists or not.
 //
@@ -117,7 +119,8 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 	_, err := Request{
 		Method:            "PUT",
 		ContainerName:     c.name,
-		Options:           compileHeaders(&headers, opts),
+		Headers:           headers.ToHTTP(),
+		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 	}.Do(c.a.client)
 	if err == nil {
@@ -126,8 +129,8 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 	return err
 }
 
-//Delete deletes the container using a DELETE request. To set arbitrary request
-//headers (and to add URL parameters), pass a non-nil *RequestOptions.
+//Delete deletes the container using a DELETE request. To add URL parameters,
+//pass a non-nil *RequestOptions.
 //
 //This operation fails with http.StatusConflict if the container is not empty.
 //
@@ -138,7 +141,8 @@ func (c *Container) Delete(headers ContainerHeaders, opts *RequestOptions) error
 	_, err := Request{
 		Method:            "DELETE",
 		ContainerName:     c.name,
-		Options:           compileHeaders(&headers, opts),
+		Headers:           headers.ToHTTP(),
+		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(c.a.client)
 	if err == nil {

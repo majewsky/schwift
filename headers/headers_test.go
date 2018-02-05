@@ -16,55 +16,61 @@
 *
 ******************************************************************************/
 
-package schwift
+package headers
 
 import "testing"
 
-func TestMetadata(t *testing.T) {
-	m := NewMetadata(
-		"first", "value1",
-		"second-thing", "value2",
-	)
+func TestHeaders(t *testing.T) {
+	h := make(Headers)
+	h.Set("first", "value1")
+	h.Set("second-thing", "value2")
 
-	expectMetadata(t, m, map[string]string{
+	expectHeaders(t, h, map[string]string{
 		"First":        "value1",
 		"Second-Thing": "value2",
 	})
 
-	expectString(t, m.Get("first"), "value1")
-	expectString(t, m.Get("First"), "value1")
-	expectString(t, m.Get("FIRST"), "value1")
+	expectString(t, h.Get("first"), "value1")
+	expectString(t, h.Get("First"), "value1")
+	expectString(t, h.Get("FIRST"), "value1")
 
-	m.Set("first", "changed")
-	m.Set("third", "")
+	h.Set("first", "changed")
+	h.Set("third", "")
 
-	expectMetadata(t, m, map[string]string{
+	expectHeaders(t, h, map[string]string{
 		"First":        "changed",
 		"Second-Thing": "value2",
 		"Third":        "",
 	})
 
-	m.Clear("second-thing")
-	m.Clear("fourth-thing")
+	h.Clear("second-thing")
+	h.Clear("fourth-thing")
 
-	expectMetadata(t, m, map[string]string{
+	expectHeaders(t, h, map[string]string{
 		"First":        "changed",
 		"Second-Thing": "",
 		"Third":        "",
 		"Fourth-Thing": "",
 	})
 
-	m.Del("FIRST")
-	m.Del("second-Thing")
+	h.Del("FIRST")
+	h.Del("second-Thing")
 
-	expectMetadata(t, m, map[string]string{
+	expectHeaders(t, h, map[string]string{
 		"Third":        "",
 		"Fourth-Thing": "",
 	})
 
 }
 
-func expectMetadata(t *testing.T, actual Metadata, expected map[string]string) {
+func expectString(t *testing.T, actual string, expected string) {
+	t.Helper()
+	if actual != expected {
+		t.Errorf("expected value %q, got %q instead\n", expected, actual)
+	}
+}
+
+func expectHeaders(t *testing.T, actual Headers, expected map[string]string) {
 	t.Helper()
 	reported := make(map[string]bool)
 

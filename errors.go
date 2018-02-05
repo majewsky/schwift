@@ -76,15 +76,3 @@ func Is(err error, code int) bool {
 	}
 	return false
 }
-
-//MalformedHeaderError is generated when a response from Swift contains a
-//malformed header.
-type MalformedHeaderError struct {
-	Key        string
-	ParseError error
-}
-
-//Error implements the builtin/error interface.
-func (e MalformedHeaderError) Error() string {
-	return "Bad header " + e.Key + ": " + e.ParseError.Error()
-}
