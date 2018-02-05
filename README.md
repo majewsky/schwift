@@ -2,8 +2,9 @@
 
 [![GoDoc](https://godoc.org/github.com/majewsky/schwift?status.svg)](https://godoc.org/github.com/majewsky/schwift)
 
-this is a Go client library for [OpenStack Swift](https://github.com/openstack/swift). I made this after growing
-frustrated with the bad API design of [`ncw/swift`](https://github.com/ncw/swift).
+This is a Go client library for [OpenStack Swift](https://github.com/openstack/swift). I made this after growing
+frustrated with the inflexible API design of [`ncw/swift`](https://github.com/ncw/swift); see [near the
+bottom](#why-another-swift-client-library) for details.
 
 <p style="color:red;font-weight:bold">WARNING: This is in a pre-alpha stage and neither complete nor tested.</p>
 
@@ -68,28 +69,36 @@ the `schwift.Account` object.
 
 The most popular Swift client library is [`ncw/swift`](https://github.com/ncw/swift). I have [used
 it](https://github.com/docker/distribution/pull/2441) [extensively](https://github.com/sapcc/swift-http-import) and my
-main gripe with it is that its API is designed around single tasks (like "get content of body as string") which are each
-modeled as single functions. Since you cannot add arguments to an existing function without breaking backwards
-compatibility, this means that if the existing functions do not cover your usecase, you have to add another function to
-do basically the same thing. When you're trying to do something that's not one of the 10 most common things, you're
-going to run into dead ends where the API does not allow you do specify that one URL parameter that you need. Like that
-one day [when I filed five issues in a row because every function in the API that I tried turned out to be missing
-something](https://github.com/ncw/swift/issues?utf8=%E2%9C%93&q=is%3Aissue+author%3Amajewsky+created%3A2017-11).
+main gripe with it is that its API is mostly based on single functions. When your API is a function, you cannot easily
+add further arguments to it without breaking backwards compatiblity. Whenever someone wants to do something slightly
+different, an entirely new function needs to be added. To witness, ncw/swift has five functions for listing objects,
+four functions for downloading objects, and three functions for uploading objects. (And that's without considering the
+separate API for large objects.) And still, when you try to do something that's not one of the 10 most common things,
+you're going to run into dead ends where the API does not allow you do specify that one URL parameter that you need.
+Like that one day [when I filed five issues in a row because every function in the API that I tried turned out to be
+missing something](https://github.com/ncw/swift/issues?utf8=%E2%9C%93&q=is%3Aissue+author%3Amajewsky+created%3A2017-11).
 
-This library uses Gophercloud for authentication (which solves one problem that ncw/swift has, namely that you cannot
-use the Keystone token that ncw/swift fetches for talking to other OpenStack services), but besides the auth code, it
-avoids pretty much all other parts of Gophercloud, because it too has fatal design flaws:
+Schwift improves on ncw/swift by:
 
-- The API is modeled around individual requests and responses, which means that there will probably never be support for
-  advanced features like large objects unless you're willing to do all the footwork yourself.
-- The built-in error handling paves over any useful error messages that the server might return. For example, when you
-  get a 404 response, `err.Error()` only says [`Resource not
-  found`](https://github.com/gophercloud/gophercloud/blob/4a3f5ae58624b68283375060dad06a214b05a32b/errors.go#L112). To
-  get the actual server error message, you have to use `err.(*gophercloud.ErrUnexpectedResponseCode).Body` which is
-  absolutely obvious.
-- The implementation is quite unidiomatic. It all looks like a Java developer's first Go project. For example, to resume
-  the error handling example, [all of
-  this](https://github.com/gophercloud/gophercloud/blob/4a3f5ae58624b68283375060dad06a214b05a32b/errors.go#L65-L178)
-  should be deleted without replacement because `ErrUnexpectedResponseCode` does the same without paving over the server
-  error message. Most other types in that module should probably be deleted as well (there is no plausible reason for
-  requiring all error types to inherit from a `BaseError`; after all, this is Go, not Java).
+- allowing the user to set arbitary headers and URL parameters in every request method,
+- including a pointer to `RequestOpts` in every request method, which can later be extended with new members without
+  breaking backwards compatiblity, and
+- providing a generic `Request.Do()` method as a last resort for users who need to do a request that absolutely cannot
+  be made with the existing request methods.
+
+### What about Gophercloud?
+
+Schwift uses Gophercloud for authentication. That solves one problem that ncw/swift has, namely that you cannot
+use the Keystone token that ncw/swift fetches for talking to other OpenStack services
+
+But besides the auth code, Schwift avoids all other parts of Gophercloud. Gophercloud, like many other OpenStack client
+libraries, is modeled frankly around the "JSON-in, JSON-out" request-response-based design that all OpenStack APIs
+share. All of them, except for Swift. A lot of the infrastructure that Gophercloud provides is not suited for Swift,
+mostly on account of it not using JSON bodies anywhere.
+
+Furthermore, the API of Gophercloud is modeled around individual requests and responses, which means that there will
+probably never be support for advanced features like large objects unless you're willing to do all the footwork
+yourself.
+
+Schwift improves on Gophercloud by providing a object-oriented API that respects and embraces Swift's domain model and
+API design.
