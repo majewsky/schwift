@@ -1,5 +1,7 @@
 # Schwift
 
+[![GoDoc](https://godoc.org/github.com/majewsky/schwift?status.svg)](https://godoc.org/github.com/majewsky/schwift)
+
 this is a Go client library for [OpenStack Swift](https://github.com/openstack/swift). I made this after growing
 frustrated with the bad API design of [`ncw/swift`](https://github.com/ncw/swift).
 
