@@ -35,13 +35,14 @@ import (
 //Set(), Del(), Clear() methods on this type.
 type AccountHeaders struct {
 	headers.Headers
-	BytesUsed      headers.Uint64Readonly `schwift:"X-Account-Bytes-Used"`
-	ContainerCount headers.Uint64Readonly `schwift:"X-Account-Container-Count"`
-	Metadata       headers.Metadata       `schwift:"X-Account-Meta-"`
-	ObjectCount    headers.Uint64Readonly `schwift:"X-Account-Object-Count"`
-	QuotaBytes     headers.Uint64         `schwift:"X-Account-Meta-Quota-Bytes"`
-	TempURLKey     headers.String         `schwift:"X-Account-Meta-Temp-URL-Key"`
-	TempURLKey2    headers.String         `schwift:"X-Account-Meta-Temp-URL-Key-2"`
+	BytesUsed      headers.Uint64Readonly   `schwift:"X-Account-Bytes-Used"`
+	ContainerCount headers.Uint64Readonly   `schwift:"X-Account-Container-Count"`
+	Metadata       headers.Metadata         `schwift:"X-Account-Meta-"`
+	ObjectCount    headers.Uint64Readonly   `schwift:"X-Account-Object-Count"`
+	QuotaBytes     headers.Uint64           `schwift:"X-Account-Meta-Quota-Bytes"`
+	TempURLKey     headers.String           `schwift:"X-Account-Meta-Temp-URL-Key"`
+	TempURLKey2    headers.String           `schwift:"X-Account-Meta-Temp-URL-Key-2"`
+	Timestamp      headers.UnixTimeReadonly `schwift:"X-Timestamp"`
 	//forbid initialization as struct literal (must use NewAccountHeaders)
 	initialized bool
 }
@@ -77,8 +78,23 @@ func (ah AccountHeaders) Validate() error {
 //Set(), Del(), Clear() methods on this type.
 type ContainerHeaders struct {
 	headers.Headers
-	Metadata headers.Metadata `schwift:"X-Container-Meta-"`
-	//TODO map well-known headers
+	BytesUsed        headers.Uint64Readonly `schwift:"X-Container-Bytes-Used"`
+	BytesUsedQuota   headers.Uint64         `schwift:"X-Container-Meta-Quota-Bytes"`
+	HistoryLocation  headers.String         `schwift:"X-History-Location"`
+	Metadata         headers.Metadata       `schwift:"X-Container-Meta-"`
+	ObjectCount      headers.Uint64Readonly `schwift:"X-Container-Object-Count"`
+	ObjectCountQuota headers.Uint64         `schwift:"X-Container-Meta-Quota-Count"`
+	ReadACL          headers.String         `schwift:"X-Container-Read"`
+	//StoragePolicy can only be set in a PUT request.
+	StoragePolicy    headers.String           `schwift:"X-Storage-Policy"`
+	SyncKey          headers.String           `schwift:"X-Container-Sync-Key"`
+	SyncTo           headers.String           `schwift:"X-Container-Sync-To"`
+	TempURLKey2      headers.String           `schwift:"X-Container-Meta-Temp-URL-Key-2"`
+	TempURLKey       headers.String           `schwift:"X-Container-Meta-Temp-URL-Key"`
+	Timestamp        headers.UnixTimeReadonly `schwift:"X-Timestamp"`
+	VersionsLocation headers.String           `schwift:"X-Versions-Location"`
+	WriteACL         headers.String           `schwift:"X-Container-Write"`
+	//TODO map X-Container-Meta-Access-Control-* (requires new data types)
 	//forbid initialization as struct literal (must use NewContainerHeaders)
 	initialized bool
 }
