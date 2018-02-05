@@ -117,6 +117,7 @@ func (a *Account) Invalidate() {
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
+	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "POST",
 		Headers:           headers.ToHTTP(),
@@ -137,6 +138,7 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
 func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
+	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "PUT",
 		Headers:           headers.ToHTTP(),

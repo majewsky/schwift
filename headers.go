@@ -19,6 +19,7 @@
 package schwift
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/majewsky/schwift/headers"
@@ -29,6 +30,9 @@ import (
 //request on the account, and will be sent by a PUT or POST request. The other
 //attributes allow type-safe access to well-known headers, as noted in the tags
 //next to each field.
+//
+//Follow the link on the Headers attribute for the documentation of the Get(),
+//Set(), Del(), Clear() methods on this type.
 type AccountHeaders struct {
 	headers.Headers
 	BytesUsed      headers.Uint64Readonly `schwift:"X-Account-Bytes-Used"`
@@ -39,14 +43,18 @@ type AccountHeaders struct {
 	TempURLKey     headers.String         `schwift:"X-Account-Meta-Temp-URL-Key"`
 	TempURLKey2    headers.String         `schwift:"X-Account-Meta-Temp-URL-Key-2"`
 	//forbid initialization as struct literal (must use NewAccountHeaders)
-	private struct{}
+	initialized bool
 }
 
 //NewAccountHeaders prepares a new AccountHeaders instance.
+//
+//WARNING: Always use this function to construct AccountHeaders instances.
+//Failure to do so will result in uncontrolled crashes!
 func NewAccountHeaders() AccountHeaders {
 	var ah AccountHeaders
 	ah.Headers = make(headers.Headers)
 	initializeByReflection(&ah)
+	ah.initialized = true
 	return ah
 }
 
@@ -64,19 +72,26 @@ func (ah AccountHeaders) Validate() error {
 //request on the container, and will be sent by a PUT or POST request. The
 //other attributes allow type-safe access to well-known headers, as noted in
 //the tags next to each field.
+//
+//Follow the link on the Headers attribute for the documentation of the Get(),
+//Set(), Del(), Clear() methods on this type.
 type ContainerHeaders struct {
 	headers.Headers
 	Metadata headers.Metadata `schwift:"X-Container-Meta-"`
 	//TODO map well-known headers
 	//forbid initialization as struct literal (must use NewContainerHeaders)
-	private struct{}
+	initialized bool
 }
 
 //NewContainerHeaders prepares a new ContainerHeaders instance.
+//
+//WARNING: Always use this function to construct ContainerHeaders instances.
+//Failure to do so will result in uncontrolled crashes!
 func NewContainerHeaders() ContainerHeaders {
 	var ch ContainerHeaders
 	ch.Headers = make(headers.Headers)
 	initializeByReflection(&ch)
+	ch.initialized = true
 	return ch
 }
 
@@ -120,6 +135,14 @@ func validateByReflection(value interface{}) error {
 		}
 		return nil
 	})
+}
+
+func ensureInitializedByReflection(value interface{}) {
+	initialized := reflect.ValueOf(value).FieldByName("initialized").Bool()
+	if !initialized {
+		msg := "values of type %T MUST be initialized with the corresponding New...() function"
+		panic(fmt.Sprintf(msg, value, value))
+	}
 }
 
 func foreachTaggedField(value interface{}, callback func(fieldPtr interface{}, info fieldInfo) error) error {

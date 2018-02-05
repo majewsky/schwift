@@ -96,6 +96,7 @@ func (c *Container) Headers() (ContainerHeaders, error) {
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error {
+	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "POST",
 		ContainerName:     c.name,
@@ -116,6 +117,7 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
 func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error {
+	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "PUT",
 		ContainerName:     c.name,
@@ -137,7 +139,14 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 //This operation fails with http.StatusNotFound if the container does not exist.
 //
 //A successful DELETE request implies Invalidate().
-func (c *Container) Delete(headers ContainerHeaders, opts *RequestOptions) error {
+func (c *Container) Delete(headers *ContainerHeaders, opts *RequestOptions) error {
+	if headers == nil {
+		h := NewContainerHeaders()
+		headers = &h
+	} else {
+		ensureInitializedByReflection(*headers)
+	}
+
 	_, err := Request{
 		Method:            "DELETE",
 		ContainerName:     c.name,
