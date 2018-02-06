@@ -20,46 +20,34 @@ For example, to connect to Swift using OpenStack Keystone authentication:
 
 ```go
 import (
-  "log"
-
   "github.com/gophercloud/gophercloud"
   "github.com/gophercloud/gophercloud/openstack"
   "github.com/majewsky/schwift"
 )
 
 authOptions, err := openstack.AuthOptionsFromEnv()
-handle(err)
 provider, err := openstack.AuthenticatedClient(authOptions)
-handle(err)
-client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts {})
-handle(err)
+client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
 
 account, err := schwift.AccountFromClient(client)
-handle(err)
 ```
 
 To connect to Swift using Swift's built-in authentication:
 
 ```go
 import (
-  "log"
-
-  "github.com/gophercloud/gophercloud"
   "github.com/gophercloud/gophercloud/openstack"
   "github.com/gophercloud/gophercloud/openstack/objectstore/v1/swauth"
   "github.com/majewsky/schwift"
 )
 
 provider, err := openstack.NewClient("http://swift.example.com:8080")
-handle(err)
 client, err := swauth.NewObjectStorageV1(provider, swauth.AuthOpts {
     User: "project:user",
     Key:  "password",
 })
-handle(err)
 
 account, err := schwift.AccountFromClient(client)
-handle(err)
 ```
 
 From this point, follow the [API documentation](https://godoc.org/github.com/majewsky/schwift) for what you can do with
