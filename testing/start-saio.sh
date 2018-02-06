@@ -1,5 +1,5 @@
 #!/bin/bash
-set -exuo pipefail
+set -euo pipefail
 
 if docker inspect schwift-testing &>/dev/null; then
   echo 'Already running.'
@@ -11,5 +11,5 @@ else
     chown 1000:1000 "${DATA_PATH}"
   fi
 
-  exec docker run --name schwift-testing -P -v "$(readlink -f "$(dirname $0)")/data:/swift/nodes" -t bouncestorage/swift-aio
+  exec docker run --name schwift-testing -P -v "${DATA_PATH}:/swift/nodes" -t bouncestorage/swift-aio
 fi
