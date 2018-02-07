@@ -8,16 +8,13 @@
 
 package schwift
 
-import (
-	"net/textproto"
-
-	"github.com/majewsky/schwift/headers"
-)
+import "net/textproto"
 
 //AccountHeaders contains the headers for a schwift.Account instance.
 //
 //To read and write well-known headers, use the methods on this type.
-//To read and write arbitary headers, use the methods on type Headers.
+//To read and write arbitary headers, use the http.Header-like methods Get(),
+//Set(), Clear(), Del().
 type AccountHeaders map[string]string
 
 //Clear sets the value for the specified header to the empty string. When the
@@ -49,114 +46,84 @@ func (h AccountHeaders) Set(key, value string) {
 	h[textproto.CanonicalMIMEHeaderKey(key)] = value
 }
 
-//Validate returns headers.MalformedHeaderError if the value of any well-known
-//header does not conform to its data type. This is called automatically by
-//Schwift when preparing an AccountHeaders instance from a GET/HEAD response,
-//so you usually do not need to do it yourself. You will get the validation error
-//from the Account method doing the request, e.g. Headers().
+//Validate returns MalformedHeaderError if the value of any well-known header
+//does not conform to its data type. This is called automatically by Schwift
+//when preparing an AccountHeaders instance from a GET/HEAD response, so you
+//usually do not need to do it yourself. You will get the validation error from
+//the Account method doing the request, e.g. Headers().
 func (h AccountHeaders) Validate() error {
-	if err := h.BytesUsed().Validate(); err != nil {
+	if err := h.BytesUsed().validate(); err != nil {
 		return err
 	}
-	if err := h.ContainerCount().Validate(); err != nil {
+	if err := h.ContainerCount().validate(); err != nil {
 		return err
 	}
-	if err := h.QuotaBytes().Validate(); err != nil {
+	if err := h.Metadata().validate(); err != nil {
 		return err
 	}
-	if err := h.ObjectCount().Validate(); err != nil {
+	if err := h.QuotaBytes().validate(); err != nil {
 		return err
 	}
-	if err := h.Timestamp().Validate(); err != nil {
+	if err := h.TempURLKey2().validate(); err != nil {
+		return err
+	}
+	if err := h.TempURLKey().validate(); err != nil {
+		return err
+	}
+	if err := h.ObjectCount().validate(); err != nil {
+		return err
+	}
+	if err := h.Timestamp().validate(); err != nil {
 		return err
 	}
 	return evadeGolintComplaint1()
 }
 
 //BytesUsed provides type-safe access to X-Account-Bytes-Used headers.
-func (h AccountHeaders) BytesUsed() headers.Uint64Readonly {
-	return headers.Uint64Readonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Bytes-Used",
-		},
-	}
+func (h AccountHeaders) BytesUsed() FieldUint64Readonly {
+	return FieldUint64Readonly{h, "X-Account-Bytes-Used"}
 }
 
 //ContainerCount provides type-safe access to X-Account-Container-Count headers.
-func (h AccountHeaders) ContainerCount() headers.Uint64Readonly {
-	return headers.Uint64Readonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Container-Count",
-		},
-	}
+func (h AccountHeaders) ContainerCount() FieldUint64Readonly {
+	return FieldUint64Readonly{h, "X-Account-Container-Count"}
 }
 
 //Metadata provides type-safe access to X-Account-Meta- headers.
-func (h AccountHeaders) Metadata() headers.Metadata {
-	return headers.Metadata{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Meta-",
-		},
-	}
+func (h AccountHeaders) Metadata() FieldMetadata {
+	return FieldMetadata{h, "X-Account-Meta-"}
 }
 
 //QuotaBytes provides type-safe access to X-Account-Meta-Quota-Bytes headers.
-func (h AccountHeaders) QuotaBytes() headers.Uint64 {
-	return headers.Uint64{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Meta-Quota-Bytes",
-		},
-	}
+func (h AccountHeaders) QuotaBytes() FieldUint64 {
+	return FieldUint64{h, "X-Account-Meta-Quota-Bytes"}
 }
 
 //TempURLKey2 provides type-safe access to X-Account-Meta-Temp-URL-Key-2 headers.
-func (h AccountHeaders) TempURLKey2() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Meta-Temp-URL-Key-2",
-		},
-	}
+func (h AccountHeaders) TempURLKey2() FieldString {
+	return FieldString{h, "X-Account-Meta-Temp-URL-Key-2"}
 }
 
 //TempURLKey provides type-safe access to X-Account-Meta-Temp-URL-Key headers.
-func (h AccountHeaders) TempURLKey() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Meta-Temp-URL-Key",
-		},
-	}
+func (h AccountHeaders) TempURLKey() FieldString {
+	return FieldString{h, "X-Account-Meta-Temp-URL-Key"}
 }
 
 //ObjectCount provides type-safe access to X-Account-Object-Count headers.
-func (h AccountHeaders) ObjectCount() headers.Uint64Readonly {
-	return headers.Uint64Readonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Account-Object-Count",
-		},
-	}
+func (h AccountHeaders) ObjectCount() FieldUint64Readonly {
+	return FieldUint64Readonly{h, "X-Account-Object-Count"}
 }
 
 //Timestamp provides type-safe access to X-Timestamp headers.
-func (h AccountHeaders) Timestamp() headers.UnixTimeReadonly {
-	return headers.UnixTimeReadonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Timestamp",
-		},
-	}
+func (h AccountHeaders) Timestamp() FieldUnixTimeReadonly {
+	return FieldUnixTimeReadonly{h, "X-Timestamp"}
 }
 
 //ContainerHeaders contains the headers for a schwift.Container instance.
 //
 //To read and write well-known headers, use the methods on this type.
-//To read and write arbitary headers, use the methods on type Headers.
+//To read and write arbitary headers, use the http.Header-like methods Get(),
+//Set(), Clear(), Del().
 type ContainerHeaders map[string]string
 
 //Clear sets the value for the specified header to the empty string. When the
@@ -188,178 +155,133 @@ func (h ContainerHeaders) Set(key, value string) {
 	h[textproto.CanonicalMIMEHeaderKey(key)] = value
 }
 
-//Validate returns headers.MalformedHeaderError if the value of any well-known
-//header does not conform to its data type. This is called automatically by
-//Schwift when preparing an ContainerHeaders instance from a GET/HEAD response,
-//so you usually do not need to do it yourself. You will get the validation error
-//from the Container method doing the request, e.g. Headers().
+//Validate returns MalformedHeaderError if the value of any well-known header
+//does not conform to its data type. This is called automatically by Schwift
+//when preparing an ContainerHeaders instance from a GET/HEAD response, so you
+//usually do not need to do it yourself. You will get the validation error from
+//the Container method doing the request, e.g. Headers().
 func (h ContainerHeaders) Validate() error {
-	if err := h.BytesUsed().Validate(); err != nil {
+	if err := h.BytesUsed().validate(); err != nil {
 		return err
 	}
-	if err := h.BytesUsedQuota().Validate(); err != nil {
+	if err := h.Metadata().validate(); err != nil {
 		return err
 	}
-	if err := h.ObjectCountQuota().Validate(); err != nil {
+	if err := h.BytesUsedQuota().validate(); err != nil {
 		return err
 	}
-	if err := h.ObjectCount().Validate(); err != nil {
+	if err := h.ObjectCountQuota().validate(); err != nil {
 		return err
 	}
-	if err := h.Timestamp().Validate(); err != nil {
+	if err := h.TempURLKey2().validate(); err != nil {
+		return err
+	}
+	if err := h.TempURLKey().validate(); err != nil {
+		return err
+	}
+	if err := h.ObjectCount().validate(); err != nil {
+		return err
+	}
+	if err := h.ReadACL().validate(); err != nil {
+		return err
+	}
+	if err := h.SyncKey().validate(); err != nil {
+		return err
+	}
+	if err := h.SyncTo().validate(); err != nil {
+		return err
+	}
+	if err := h.WriteACL().validate(); err != nil {
+		return err
+	}
+	if err := h.HistoryLocation().validate(); err != nil {
+		return err
+	}
+	if err := h.StoragePolicy().validate(); err != nil {
+		return err
+	}
+	if err := h.Timestamp().validate(); err != nil {
+		return err
+	}
+	if err := h.VersionsLocation().validate(); err != nil {
 		return err
 	}
 	return evadeGolintComplaint1()
 }
 
 //BytesUsed provides type-safe access to X-Container-Bytes-Used headers.
-func (h ContainerHeaders) BytesUsed() headers.Uint64Readonly {
-	return headers.Uint64Readonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Bytes-Used",
-		},
-	}
+func (h ContainerHeaders) BytesUsed() FieldUint64Readonly {
+	return FieldUint64Readonly{h, "X-Container-Bytes-Used"}
 }
 
 //Metadata provides type-safe access to X-Container-Meta- headers.
-func (h ContainerHeaders) Metadata() headers.Metadata {
-	return headers.Metadata{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Meta-",
-		},
-	}
+func (h ContainerHeaders) Metadata() FieldMetadata {
+	return FieldMetadata{h, "X-Container-Meta-"}
 }
 
 //BytesUsedQuota provides type-safe access to X-Container-Meta-Quota-Bytes headers.
-func (h ContainerHeaders) BytesUsedQuota() headers.Uint64 {
-	return headers.Uint64{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Meta-Quota-Bytes",
-		},
-	}
+func (h ContainerHeaders) BytesUsedQuota() FieldUint64 {
+	return FieldUint64{h, "X-Container-Meta-Quota-Bytes"}
 }
 
 //ObjectCountQuota provides type-safe access to X-Container-Meta-Quota-Count headers.
-func (h ContainerHeaders) ObjectCountQuota() headers.Uint64 {
-	return headers.Uint64{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Meta-Quota-Count",
-		},
-	}
+func (h ContainerHeaders) ObjectCountQuota() FieldUint64 {
+	return FieldUint64{h, "X-Container-Meta-Quota-Count"}
 }
 
 //TempURLKey2 provides type-safe access to X-Container-Meta-Temp-URL-Key-2 headers.
-func (h ContainerHeaders) TempURLKey2() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Meta-Temp-URL-Key-2",
-		},
-	}
+func (h ContainerHeaders) TempURLKey2() FieldString {
+	return FieldString{h, "X-Container-Meta-Temp-URL-Key-2"}
 }
 
 //TempURLKey provides type-safe access to X-Container-Meta-Temp-URL-Key headers.
-func (h ContainerHeaders) TempURLKey() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Meta-Temp-URL-Key",
-		},
-	}
+func (h ContainerHeaders) TempURLKey() FieldString {
+	return FieldString{h, "X-Container-Meta-Temp-URL-Key"}
 }
 
 //ObjectCount provides type-safe access to X-Container-Object-Count headers.
-func (h ContainerHeaders) ObjectCount() headers.Uint64Readonly {
-	return headers.Uint64Readonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Object-Count",
-		},
-	}
+func (h ContainerHeaders) ObjectCount() FieldUint64Readonly {
+	return FieldUint64Readonly{h, "X-Container-Object-Count"}
 }
 
 //ReadACL provides type-safe access to X-Container-Read headers.
-func (h ContainerHeaders) ReadACL() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Read",
-		},
-	}
+func (h ContainerHeaders) ReadACL() FieldString {
+	return FieldString{h, "X-Container-Read"}
 }
 
 //SyncKey provides type-safe access to X-Container-Sync-Key headers.
-func (h ContainerHeaders) SyncKey() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Sync-Key",
-		},
-	}
+func (h ContainerHeaders) SyncKey() FieldString {
+	return FieldString{h, "X-Container-Sync-Key"}
 }
 
 //SyncTo provides type-safe access to X-Container-Sync-To headers.
-func (h ContainerHeaders) SyncTo() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Sync-To",
-		},
-	}
+func (h ContainerHeaders) SyncTo() FieldString {
+	return FieldString{h, "X-Container-Sync-To"}
 }
 
 //WriteACL provides type-safe access to X-Container-Write headers.
-func (h ContainerHeaders) WriteACL() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Container-Write",
-		},
-	}
+func (h ContainerHeaders) WriteACL() FieldString {
+	return FieldString{h, "X-Container-Write"}
 }
 
 //HistoryLocation provides type-safe access to X-History-Location headers.
-func (h ContainerHeaders) HistoryLocation() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-History-Location",
-		},
-	}
+func (h ContainerHeaders) HistoryLocation() FieldString {
+	return FieldString{h, "X-History-Location"}
 }
 
 //StoragePolicy provides type-safe access to X-Storage-Policy headers.
-func (h ContainerHeaders) StoragePolicy() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Storage-Policy",
-		},
-	}
+func (h ContainerHeaders) StoragePolicy() FieldString {
+	return FieldString{h, "X-Storage-Policy"}
 }
 
 //Timestamp provides type-safe access to X-Timestamp headers.
-func (h ContainerHeaders) Timestamp() headers.UnixTimeReadonly {
-	return headers.UnixTimeReadonly{
-		Base: headers.Base{
-			H: h,
-			K: "X-Timestamp",
-		},
-	}
+func (h ContainerHeaders) Timestamp() FieldUnixTimeReadonly {
+	return FieldUnixTimeReadonly{h, "X-Timestamp"}
 }
 
 //VersionsLocation provides type-safe access to X-Versions-Location headers.
-func (h ContainerHeaders) VersionsLocation() headers.String {
-	return headers.String{
-		Base: headers.Base{
-			H: h,
-			K: "X-Versions-Location",
-		},
-	}
+func (h ContainerHeaders) VersionsLocation() FieldString {
+	return FieldString{h, "X-Versions-Location"}
 }
 
 func evadeGolintComplaint1() error {

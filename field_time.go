@@ -16,7 +16,7 @@
 *
 ******************************************************************************/
 
-package headers
+package schwift
 
 import (
 	"math"
@@ -24,28 +24,37 @@ import (
 	"time"
 )
 
-//UnixTimeReadonly is a helper type that provides type-safe access to a Swift
-//header whose value is a UNIX timestamp. It cannot be directly constructed,
-//but some subtypes of schwift.Headers have fields of this type. For example:
+//FieldUnixTimeReadonly is a helper type that provides type-safe access to a
+//Swift header whose value is a UNIX timestamp. It cannot be directly
+//constructed, but methods on the Headers types return this type. For example:
 //
-//    var hdr AccountHeaders
-//    //hdr.Timestamp is a headers.UnixTimeReadonly instance
-//    hdr.Timestamp.Get()    //returns a time.Time
-//    hdr.Get("X-Timestamp") //returns a string containing a UNIX timestamp
-//                           //refering to the same point in time
-type UnixTimeReadonly struct {
-	Base
+//    //suppose you have:
+//    hdr, err := obj.Headers()
+//
+//    //you could do all this:
+//    sec, err := strconv.ParseFloat(hdr.Get("X-Timestamp"), 64)
+//    time := time.Unix(int64(sec), int64(1e9 * (sec - math.Floor(sec))))
+//
+//    //or you can just:
+//    time := hdr.Timestamp().Get()
+//
+//Don't worry about the missing `err` in the last line. When the X-Timestamp
+//header fails to parse, Object.Headers() already returns the corresponding
+//MalformedHeaderError.
+type FieldUnixTimeReadonly struct {
+	h headerInterface
+	k string
 }
 
 //Exists checks whether there is a value for this header.
-func (f UnixTimeReadonly) Exists() bool {
-	return f.H.Get(f.K) != ""
+func (f FieldUnixTimeReadonly) Exists() bool {
+	return f.h.Get(f.k) != ""
 }
 
 //Get returns the value for this header, or the zero value if there is no value
 //(or if it is not a valid timestamp).
-func (f UnixTimeReadonly) Get() time.Time {
-	v, err := strconv.ParseFloat(f.H.Get(f.K), 64)
+func (f FieldUnixTimeReadonly) Get() time.Time {
+	v, err := strconv.ParseFloat(f.h.Get(f.k), 64)
 	if err != nil {
 		return time.Time{}
 	}
@@ -56,10 +65,8 @@ func (f UnixTimeReadonly) Get() time.Time {
 	)
 }
 
-//Validate is only used internally, but needs to be exported to cross package
-//boundaries.
-func (f UnixTimeReadonly) Validate() error {
-	val := f.H.Get(f.K)
+func (f FieldUnixTimeReadonly) validate() error {
+	val := f.h.Get(f.k)
 	if val == "" {
 		return nil
 	}
@@ -67,5 +74,5 @@ func (f UnixTimeReadonly) Validate() error {
 	if err == nil {
 		return nil
 	}
-	return MalformedHeaderError{f.K, err}
+	return MalformedHeaderError{f.k, err}
 }

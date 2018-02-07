@@ -16,37 +16,41 @@
 *
 ******************************************************************************/
 
-package headers
+package schwift
 
-//Metadata is a helper type that provides safe access to the metadata headers
-//in a schwift.Headers instance. It cannot be directly constructed, but each
-//subtype of schwift.Headers has a field "Metadata" of this type. For example:
+//FieldMetadata is a helper type that provides safe access to the metadata headers
+//in a SomethingHeaders instance. It cannot be directly constructed, but each
+//SomethingHeaders type has a method "Metadata" returning this type. For example:
 //
-//    var hdr ObjectHeaders
+//    hdr := make(ObjectHeaders)
 //    //the following two statements are equivalent
-//    hdr.Set("X-Object-Meta-Access", "strictly confidential")
-//    hdr.Metadata.Set("Access", "strictly confidential")
-//    //because hdr.Metadata is a headers.Metadata instance
-type Metadata struct {
-	Base
+//    hdr["X-Object-Meta-Access"] = "strictly confidential"
+//    hdr.Metadata().Set("Access", "strictly confidential")
+type FieldMetadata struct {
+	h headerInterface
+	k string
 }
 
 //Clear works like Headers.Clear(), but prepends the metadata prefix to the key.
-func (m Metadata) Clear(key string) {
-	m.H.Clear(m.K + key)
+func (m FieldMetadata) Clear(key string) {
+	m.h.Clear(m.k + key)
 }
 
 //Del works like Headers.Del(), but prepends the metadata prefix to the key.
-func (m Metadata) Del(key string) {
-	m.H.Del(m.K + key)
+func (m FieldMetadata) Del(key string) {
+	m.h.Del(m.k + key)
 }
 
 //Get works like Headers.Get(), but prepends the metadata prefix to the key.
-func (m Metadata) Get(key string) string {
-	return m.H.Get(m.K + key)
+func (m FieldMetadata) Get(key string) string {
+	return m.h.Get(m.k + key)
 }
 
 //Set works like Headers.Set(), but prepends the metadata prefix to the key.
-func (m Metadata) Set(key, value string) {
-	m.H.Set(m.K+key, value)
+func (m FieldMetadata) Set(key, value string) {
+	m.h.Set(m.k+key, value)
+}
+
+func (m FieldMetadata) validate() error {
+	return nil
 }

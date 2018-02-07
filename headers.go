@@ -46,3 +46,10 @@ func headersFromHTTP(src http.Header) map[string]string {
 	}
 	return h
 }
+
+type headerInterface interface {
+	Clear(string)
+	Del(string)
+	Get(string) string
+	Set(string, string)
+}

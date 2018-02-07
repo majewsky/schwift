@@ -16,34 +16,34 @@
 *
 ******************************************************************************/
 
-package headers
+package schwift
 
 import (
 	"strconv"
 )
 
-//Uint64 is a helper type that provides type-safe access to a Swift header
+//FieldUint64 is a helper type that provides type-safe access to a Swift header
 //whose value is an unsigned integer. It cannot be directly constructed, but
-//some subtypes of schwift.Headers have fields of this type. For example:
+//methods on the Headers types return this type. For example:
 //
-//    var hdr AccountHeaders
+//    hdr := make(AccountHeaders)
 //    //the following two statements are equivalent:
-//    hdr.Set("X-Account-Meta-Quota-Bytes", "1048576")
-//    hdr.QuotaBytes.Set(1 << 20)
-//    //because hdr.QuotaBytes is a headers.Uint64 instance
-type Uint64 struct {
-	Base
+//    hdr["X-Account-Meta-Quota-Bytes"] = "1048576"
+//    hdr.QuotaBytes().Set(1 << 20)
+type FieldUint64 struct {
+	h headerInterface
+	k string
 }
 
 //Exists checks whether there is a value for this header.
-func (f Uint64) Exists() bool {
-	return f.H.Get(f.K) != ""
+func (f FieldUint64) Exists() bool {
+	return f.h.Get(f.k) != ""
 }
 
 //Get returns the value for this header, or 0 if there is no value (or if it is
 //not a valid uint64).
-func (f Uint64) Get() uint64 {
-	v, err := strconv.ParseUint(f.H.Get(f.K), 10, 64)
+func (f FieldUint64) Get() uint64 {
+	v, err := strconv.ParseUint(f.h.Get(f.k), 10, 64)
 	if err != nil {
 		return 0
 	}
@@ -52,26 +52,26 @@ func (f Uint64) Get() uint64 {
 
 //Set writes a new value for this header into the corresponding schwift.Headers
 //instance.
-func (f Uint64) Set(value uint64) {
-	f.H.Set(f.K, strconv.FormatUint(value, 10))
+func (f FieldUint64) Set(value uint64) {
+	f.h.Set(f.k, strconv.FormatUint(value, 10))
 }
 
 //Del removes this key from the original schwift.Headers instance, so that the
 //key will remain unchanged on the server during Update().
-func (f Uint64) Del() {
-	f.H.Del(f.K)
+func (f FieldUint64) Del() {
+	f.h.Del(f.k)
 }
 
 //Clear sets this key to an empty string in the original schwift.Headers
 //instance, so that the key will be removed on the server during Update().
-func (f Uint64) Clear() {
-	f.H.Clear(f.K)
+func (f FieldUint64) Clear() {
+	f.h.Clear(f.k)
 }
 
-//Validate is only used internally, but needs to be exported to cross package
+//validate is only used internally, but needs to be exported to cross package
 //boundaries.
-func (f Uint64) Validate() error {
-	val := f.H.Get(f.K)
+func (f FieldUint64) validate() error {
+	val := f.h.Get(f.k)
 	if val == "" {
 		return nil
 	}
@@ -79,36 +79,35 @@ func (f Uint64) Validate() error {
 	if err == nil {
 		return nil
 	}
-	return MalformedHeaderError{f.K, err}
+	return MalformedHeaderError{f.k, err}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//Uint64Readonly is a readonly variant of Uint64. It is used for fields that
-//cannot be set by the client.
-type Uint64Readonly struct {
-	Base
+//FieldUint64Readonly is a readonly variant of FieldUint64. It is used for
+//fields that cannot be set by the client.
+type FieldUint64Readonly struct {
+	h headerInterface
+	k string
 }
 
 //Exists checks whether there is a value for this header.
-func (f Uint64Readonly) Exists() bool {
-	return f.H.Get(f.K) != ""
+func (f FieldUint64Readonly) Exists() bool {
+	return f.h.Get(f.k) != ""
 }
 
 //Get returns the value for this header, or 0 if there is no value (or if it is
 //not a valid uint64).
-func (f Uint64Readonly) Get() uint64 {
-	v, err := strconv.ParseUint(f.H.Get(f.K), 10, 64)
+func (f FieldUint64Readonly) Get() uint64 {
+	v, err := strconv.ParseUint(f.h.Get(f.k), 10, 64)
 	if err != nil {
 		return 0
 	}
 	return v
 }
 
-//Validate is only used internally, but needs to be exported to cross package
-//boundaries.
-func (f Uint64Readonly) Validate() error {
-	val := f.H.Get(f.K)
+func (f FieldUint64Readonly) validate() error {
+	val := f.h.Get(f.k)
 	if val == "" {
 		return nil
 	}
@@ -116,5 +115,5 @@ func (f Uint64Readonly) Validate() error {
 	if err == nil {
 		return nil
 	}
-	return MalformedHeaderError{f.K, err}
+	return MalformedHeaderError{f.k, err}
 }
