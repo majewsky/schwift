@@ -42,6 +42,23 @@ func init() {
 	}
 }
 
+//RequestOptions contains additional headers and values for a request.
+type RequestOptions struct {
+	Values url.Values
+}
+
+func cloneRequestOptions(orig *RequestOptions) *RequestOptions {
+	result := RequestOptions{
+		Values: make(url.Values),
+	}
+	if orig != nil {
+		for k, v := range orig.Values {
+			result.Values[k] = v
+		}
+	}
+	return &result
+}
+
 //Request contains the parameters that can be set in a request to the Swift API.
 type Request struct {
 	Method        string //"GET", "HEAD", "PUT", "POST" or "DELETE"
@@ -53,11 +70,6 @@ type Request struct {
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
 	//schwift.UnexpectedStatusCodeError may be returned.
 	ExpectStatusCodes []int
-}
-
-//RequestOptions contains additional headers and values for request.
-type RequestOptions struct {
-	Values url.Values
 }
 
 //URL returns the full URL for this request.

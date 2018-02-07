@@ -148,4 +148,24 @@ func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
 	return err
 }
 
-// TODO container listing
+//Containers returns a ContainerIterator that lists the containers in this
+//account. The most common use case is:
+//
+//	containers, err := account.Containers().Collect()
+//
+//You can extend this by configuring the iterator before collecting the results:
+//
+//	iter := account.Containers()
+//	iter.Prefix = "test-"
+//	containers, err := iter.Collect()
+//
+//Or you can use a different iteration method:
+//
+//	err := account.Containers().ForeachDetailed(func (ci ContainerInfo) error {
+//		log.Printf("container %s contains %d objects!\n",
+//			ci.Container.Name(), ci.ObjectCount)
+//	})
+//
+func (a *Account) Containers() *ContainerIterator {
+	return &ContainerIterator{Account: a}
+}
