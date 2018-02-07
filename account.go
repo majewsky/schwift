@@ -96,8 +96,7 @@ func (a *Account) Headers() (AccountHeaders, error) {
 		return AccountHeaders{}, err
 	}
 
-	headers := NewAccountHeaders()
-	headers.FromHTTP(resp.Header)
+	headers := AccountHeaders(headersFromHTTP(resp.Header))
 	err = headers.Validate()
 	if err != nil {
 		return headers, err
@@ -117,10 +116,9 @@ func (a *Account) Invalidate() {
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
-	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "POST",
-		Headers:           headers.ToHTTP(),
+		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(a.client)
@@ -138,10 +136,9 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
 func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
-	ensureInitializedByReflection(headers)
 	_, err := Request{
 		Method:            "PUT",
-		Headers:           headers.ToHTTP(),
+		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 	}.Do(a.client)

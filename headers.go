@@ -19,167 +19,30 @@
 package schwift
 
 import (
-	"fmt"
-	"reflect"
-
-	"github.com/majewsky/schwift/headers"
+	"net/http"
+	"net/textproto"
 )
 
-//AccountHeaders contains the headers for an account. The Headers attribute
-//contains the actual set of headers that was returned from a HEAD or GET
-//request on the account, and will be sent by a PUT or POST request. The other
-//attributes allow type-safe access to well-known headers, as noted in the tags
-//next to each field.
-//
-//Follow the link on the Headers attribute for the documentation of the Get(),
-//Set(), Del(), Clear() methods on this type.
-type AccountHeaders struct {
-	headers.Headers
-	BytesUsed      headers.Uint64Readonly   `schwift:"X-Account-Bytes-Used"`
-	ContainerCount headers.Uint64Readonly   `schwift:"X-Account-Container-Count"`
-	Metadata       headers.Metadata         `schwift:"X-Account-Meta-"`
-	ObjectCount    headers.Uint64Readonly   `schwift:"X-Account-Object-Count"`
-	QuotaBytes     headers.Uint64           `schwift:"X-Account-Meta-Quota-Bytes"`
-	TempURLKey     headers.String           `schwift:"X-Account-Meta-Temp-URL-Key"`
-	TempURLKey2    headers.String           `schwift:"X-Account-Meta-Temp-URL-Key-2"`
-	Timestamp      headers.UnixTimeReadonly `schwift:"X-Timestamp"`
-	//forbid initialization as struct literal (must use NewAccountHeaders)
-	initialized bool
-}
-
-//NewAccountHeaders prepares a new AccountHeaders instance.
-//
-//WARNING: Always use this function to construct AccountHeaders instances.
-//Failure to do so will result in uncontrolled crashes!
-func NewAccountHeaders() AccountHeaders {
-	var ah AccountHeaders
-	ah.Headers = make(headers.Headers)
-	initializeByReflection(&ah)
-	ah.initialized = true
-	return ah
-}
-
-//Validate returns headers.MalformedHeaderError if the value of any well-known
-//header does not conform to its data type. This is called automatically by
-//Schwift when preparing an AccountHeaders instance from a GET/HEAD response,
-//so you usually do not need to do it yourself. You will get the validation error
-//from the Account method doing the request, e.g. Headers() or List().
-func (ah AccountHeaders) Validate() error {
-	return validateByReflection(&ah)
-}
-
-//ContainerHeaders contains the headers for a container. The Headers attribute
-//contains the actual set of headers that was returned from a HEAD or GET
-//request on the container, and will be sent by a PUT or POST request. The
-//other attributes allow type-safe access to well-known headers, as noted in
-//the tags next to each field.
-//
-//Follow the link on the Headers attribute for the documentation of the Get(),
-//Set(), Del(), Clear() methods on this type.
-type ContainerHeaders struct {
-	headers.Headers
-	BytesUsed        headers.Uint64Readonly `schwift:"X-Container-Bytes-Used"`
-	BytesUsedQuota   headers.Uint64         `schwift:"X-Container-Meta-Quota-Bytes"`
-	HistoryLocation  headers.String         `schwift:"X-History-Location"`
-	Metadata         headers.Metadata       `schwift:"X-Container-Meta-"`
-	ObjectCount      headers.Uint64Readonly `schwift:"X-Container-Object-Count"`
-	ObjectCountQuota headers.Uint64         `schwift:"X-Container-Meta-Quota-Count"`
-	ReadACL          headers.String         `schwift:"X-Container-Read"`
-	//StoragePolicy can only be set in a PUT request.
-	StoragePolicy    headers.String           `schwift:"X-Storage-Policy"`
-	SyncKey          headers.String           `schwift:"X-Container-Sync-Key"`
-	SyncTo           headers.String           `schwift:"X-Container-Sync-To"`
-	TempURLKey2      headers.String           `schwift:"X-Container-Meta-Temp-URL-Key-2"`
-	TempURLKey       headers.String           `schwift:"X-Container-Meta-Temp-URL-Key"`
-	Timestamp        headers.UnixTimeReadonly `schwift:"X-Timestamp"`
-	VersionsLocation headers.String           `schwift:"X-Versions-Location"`
-	WriteACL         headers.String           `schwift:"X-Container-Write"`
-	//TODO map X-Container-Meta-Access-Control-* (requires new data types)
-	//forbid initialization as struct literal (must use NewContainerHeaders)
-	initialized bool
-}
-
-//NewContainerHeaders prepares a new ContainerHeaders instance.
-//
-//WARNING: Always use this function to construct ContainerHeaders instances.
-//Failure to do so will result in uncontrolled crashes!
-func NewContainerHeaders() ContainerHeaders {
-	var ch ContainerHeaders
-	ch.Headers = make(headers.Headers)
-	initializeByReflection(&ch)
-	ch.initialized = true
-	return ch
-}
-
-//Validate returns headers.MalformedHeaderError if the value of any well-known
-//header does not conform to its data type. This is called automatically by
-//Schwift when preparing an ContainerHeaders instance from a GET/HEAD response,
-//so you usually do not need to do it yourself. You will get the validation error
-//from the Container method doing the request, e.g. Headers() or List().
-func (ch ContainerHeaders) Validate() error {
-	return validateByReflection(&ch)
-}
-
-type fieldInfo struct {
-	FieldName  string
-	HeaderName string
-}
-
-func initializeByReflection(value interface{}) {
-	rv := reflect.ValueOf(value).Elem()
-	hdrs := rv.FieldByName("Headers").Interface().(headers.Headers)
-
-	foreachTaggedField(value, func(fieldPtr interface{}, info fieldInfo) error {
-		base := reflect.ValueOf(fieldPtr).Elem().FieldByName("Base").Addr().Interface().(*headers.Base)
-		base.H = hdrs
-		base.K = info.HeaderName
+func headersToHTTP(h map[string]string) http.Header {
+	if h == nil {
 		return nil
-	})
-}
-
-type validator interface {
-	Validate() error
-}
-
-func validateByReflection(value interface{}) error {
-	return foreachTaggedField(value, func(fieldPtr interface{}, info fieldInfo) error {
-		if validator, ok := fieldPtr.(validator); ok {
-			err := validator.Validate()
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func ensureInitializedByReflection(value interface{}) {
-	initialized := reflect.ValueOf(value).FieldByName("initialized").Bool()
-	if !initialized {
-		msg := "values of type %T MUST be initialized with the corresponding New...() function"
-		panic(fmt.Sprintf(msg, value, value))
 	}
+	dest := make(http.Header, len(h))
+	for k, v := range h {
+		dest.Set(k, v)
+	}
+	return dest
 }
 
-func foreachTaggedField(value interface{}, callback func(fieldPtr interface{}, info fieldInfo) error) error {
-	rv := reflect.ValueOf(value).Elem()
-
-	//iterate over the struct fields
-	for idx := 0; idx < rv.NumField(); idx++ {
-		fieldType := rv.Type().Field(idx)
-		headerName := fieldType.Tag.Get("schwift")
-
-		if headerName != "" {
-			fieldPtr := rv.Field(idx).Addr().Interface()
-			err := callback(fieldPtr, fieldInfo{
-				FieldName:  fieldType.Name,
-				HeaderName: headerName,
-			})
-			if err != nil {
-				return err
-			}
+func headersFromHTTP(src http.Header) map[string]string {
+	if src == nil {
+		return nil
+	}
+	h := make(map[string]string, len(src))
+	for k, v := range src {
+		if len(v) > 0 {
+			h[textproto.CanonicalMIMEHeaderKey(k)] = v[0]
 		}
 	}
-
-	return nil
+	return h
 }

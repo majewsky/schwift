@@ -1,3 +1,5 @@
+///usr/bin/env go run "$0" "$@"; exit $!
+
 /******************************************************************************
 *
 *  Copyright 2018 Stefan Majewsky <majewsky@gmx.net>
@@ -16,42 +18,46 @@
 *
 ******************************************************************************/
 
-package schwift
+package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"net/http"
-	"testing"
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
-func TestContainerExistence(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
-		c := a.Container(getRandomName())
+func main() {
+	input, err := ioutil.ReadAll(os.Stdin)
+	failIfError(err)
 
-		exists, err := c.Exists()
-		expectError(t, err, "")
-		expectBool(t, exists, false)
+	sections := strings.SplitN(string(input), "\n---\n", 2)
+	if len(sections) != 2 {
+		fail("missing separator between data and template")
+	}
+	dataStr, templateStr := sections[0], sections[1]
 
-		_, err = c.Headers()
-		expectError(t, err, "expected 204 response, got 404 instead")
-		expectBool(t, Is(err, http.StatusNotFound), true)
-		expectBool(t, Is(err, http.StatusNoContent), false)
+	data := make(map[string]interface{})
+	failIfError(json.Unmarshal([]byte(dataStr), &data))
 
-		err = c.Create(nil, nil)
-		expectError(t, err, "")
+	tmpl, err := template.New("tmpl").Parse(templateStr)
+	failIfError(err)
 
-		exists, err = c.Exists()
-		expectError(t, err, "")
-		expectBool(t, exists, true)
-	})
+	failIfError(tmpl.Execute(os.Stdout, data))
 }
 
-func getRandomName() string {
-	var buf [16]byte
-	_, err := rand.Read(buf[:])
+func failIfError(err error) {
 	if err != nil {
-		panic(err.Error())
+		fail(err.Error())
 	}
-	return hex.EncodeToString(buf[:])
+}
+
+func fail(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
+	fmt.Fprintln(os.Stderr, msg)
+	os.Exit(1)
 }

@@ -20,6 +20,14 @@ package headers
 
 //Base is an implementation detail.
 type Base struct {
-	H Headers
+	H Interface
 	K string
+}
+
+//Interface is an implementation detail.
+type Interface interface {
+	Clear(string)
+	Del(string)
+	Get(string) string
+	Set(string, string)
 }

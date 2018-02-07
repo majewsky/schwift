@@ -1,6 +1,17 @@
-all:
+help:
 	@echo 'Available targets:'
+	@echo '    make generate'
 	@echo '    make test'
+
+################################################################################
+
+generate: generated.go
+
+%: %.in | util/render_template.go
+	@echo ./util/render_template.go < $< > $@
+	@./util/render_template.go < $< > $@.new && mv $@.new $@ || (rm $@.new; false)
+
+################################################################################
 
 test: static-tests cover.html
 
