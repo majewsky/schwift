@@ -19,15 +19,19 @@
 package schwift
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
 	"testing"
 )
 
-func TestContainerExistence(t *testing.T) {
+func TestContainerLifecycle(t *testing.T) {
 	testWithAccount(t, func(a *Account) {
-		c := a.Container(getRandomName())
+		containerName := getRandomName()
+		c := a.Container(containerName)
+
+		expectString(t, c.Name(), containerName)
+		if c.Account() != a {
+			t.Errorf("expected c.Account() = %#v, go %#v instead\n", a, c.Account())
+		}
 
 		exists, err := c.Exists()
 		expectError(t, err, "")
@@ -38,20 +42,42 @@ func TestContainerExistence(t *testing.T) {
 		expectBool(t, Is(err, http.StatusNotFound), true)
 		expectBool(t, Is(err, http.StatusNoContent), false)
 
+		//DELETE should be idempotent and not return success on non-existence, but
+		//OpenStack loves to be inconsistent with everything (including, notably, itself)
+		err = c.Delete(nil, nil)
+		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
+
 		err = c.Create(nil, nil)
 		expectError(t, err, "")
 
 		exists, err = c.Exists()
 		expectError(t, err, "")
 		expectBool(t, exists, true)
+
+		err = c.Delete(nil, nil)
+		expectError(t, err, "")
 	})
 }
 
-func getRandomName() string {
-	var buf [16]byte
-	_, err := rand.Read(buf[:])
-	if err != nil {
-		panic(err.Error())
-	}
-	return hex.EncodeToString(buf[:])
+func TestContainerUpdate(t *testing.T) {
+	testWithContainer(t, func(c *Container) {
+
+		hdr, err := c.Headers()
+		expectError(t, err, "")
+		expectBool(t, hdr.ObjectCount().Exists(), true)
+		expectUint64(t, hdr.ObjectCount().Get(), 0)
+
+		hdr = make(ContainerHeaders)
+		hdr.ObjectCountQuota().Set(23)
+		hdr.BytesUsedQuota().Set(42)
+
+		err = c.Update(hdr, nil)
+		expectError(t, err, "")
+
+		hdr, err = c.Headers()
+		expectError(t, err, "")
+		expectUint64(t, hdr.BytesUsedQuota().Get(), 42)
+		expectUint64(t, hdr.ObjectCountQuota().Get(), 23)
+
+	})
 }

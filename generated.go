@@ -61,7 +61,7 @@ func (h AccountHeaders) Validate() error {
 	if err := h.Metadata().validate(); err != nil {
 		return err
 	}
-	if err := h.QuotaBytes().validate(); err != nil {
+	if err := h.BytesUsedQuota().validate(); err != nil {
 		return err
 	}
 	if err := h.TempURLKey2().validate(); err != nil {
@@ -94,8 +94,8 @@ func (h AccountHeaders) Metadata() FieldMetadata {
 	return FieldMetadata{h, "X-Account-Meta-"}
 }
 
-//QuotaBytes provides type-safe access to X-Account-Meta-Quota-Bytes headers.
-func (h AccountHeaders) QuotaBytes() FieldUint64 {
+//BytesUsedQuota provides type-safe access to X-Account-Meta-Quota-Bytes headers.
+func (h AccountHeaders) BytesUsedQuota() FieldUint64 {
 	return FieldUint64{h, "X-Account-Meta-Quota-Bytes"}
 }
 

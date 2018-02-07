@@ -19,7 +19,6 @@
 package schwift
 
 import (
-	"math"
 	"strconv"
 	"time"
 )
@@ -58,11 +57,7 @@ func (f FieldUnixTimeReadonly) Get() time.Time {
 	if err != nil {
 		return time.Time{}
 	}
-	seconds := math.Floor(v)
-	return time.Unix(
-		int64(seconds),
-		int64(1e9*(v-seconds)),
-	)
+	return time.Unix(0, int64(1e9*v))
 }
 
 func (f FieldUnixTimeReadonly) validate() error {

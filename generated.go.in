@@ -4,7 +4,7 @@
 			{ "Header": "X-Account-Bytes-Used", "Attribute": "BytesUsed", "Type": "Uint64Readonly" },
 			{ "Header": "X-Account-Container-Count", "Attribute": "ContainerCount", "Type": "Uint64Readonly" },
 			{ "Header": "X-Account-Meta-", "Attribute": "Metadata", "Type": "Metadata" },
-			{ "Header": "X-Account-Meta-Quota-Bytes", "Attribute": "QuotaBytes", "Type": "Uint64" },
+			{ "Header": "X-Account-Meta-Quota-Bytes", "Attribute": "BytesUsedQuota", "Type": "Uint64" },
 			{ "Header": "X-Account-Meta-Temp-URL-Key-2", "Attribute": "TempURLKey2", "Type": "String" },
 			{ "Header": "X-Account-Meta-Temp-URL-Key", "Attribute": "TempURLKey", "Type": "String" },
 			{ "Header": "X-Account-Object-Count", "Attribute": "ObjectCount", "Type": "Uint64Readonly" },

@@ -36,7 +36,7 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 	expectUint64(t, headers.BytesUsed().Get(), 1234)
 	expectUint64(t, headers.ContainerCount().Get(), 23)
 	expectUint64(t, headers.ObjectCount().Get(), 42)
-	expectUint64(t, headers.QuotaBytes().Get(), 1048576)
+	expectUint64(t, headers.BytesUsedQuota().Get(), 1048576)
 
 	expectString(t, headers.Metadata().Get("foo"), "bar")
 	expectString(t, headers.Metadata().Get("Foo"), "bar")
@@ -44,44 +44,3 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 }
 
 //TODO TestParseAccountHeadersError
-
-func expectBool(t *testing.T, actual bool, expected bool) {
-	t.Helper()
-	if actual != expected {
-		t.Errorf("expected value %#v, got %#v instead\n", expected, actual)
-	}
-}
-
-func expectUint64(t *testing.T, actual uint64, expected uint64) {
-	t.Helper()
-	if actual != expected {
-		t.Errorf("expected value %d, got %d instead\n", expected, actual)
-	}
-}
-
-func expectString(t *testing.T, actual string, expected string) {
-	t.Helper()
-	if actual != expected {
-		t.Errorf("expected value %q, got %q instead\n", expected, actual)
-	}
-}
-
-func expectError(t *testing.T, actual error, expected string) (ok bool) {
-	t.Helper()
-	if actual == nil {
-		if expected != "" {
-			t.Errorf("expected error %q, got no error\n", expected)
-			return false
-		}
-	} else {
-		if expected == "" {
-			t.Errorf("expected no error, got %q\n", actual.Error())
-			return false
-		} else if expected != actual.Error() {
-			t.Errorf("expected error %q, got %q instead\n", expected, actual.Error())
-			return false
-		}
-	}
-
-	return true
-}
