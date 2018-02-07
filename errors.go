@@ -62,13 +62,15 @@ func (e UnexpectedStatusCodeError) Error() string {
 //Is checks if the given error is an UnexpectedStatusCodeError for that status
 //code. For example:
 //
-//	info, err := container.Info()
-//	if schwift.Is(err, http.StatusNotFound) {
-//		// ... create container ...
-//	} else if err != nil {
-//		// ... report error ...
-//	} else {
-//		// ... use container info ...
+//	err := container.Delete(nil, nil)
+//	if err != nil {
+//	    if schwift.Is(err, http.StatusNotFound) {
+//	        //container does not exist -> just what we wanted
+//	        return nil
+//	    } else {
+//	        //report unexpected error
+//	        return err
+//	    }
 //	}
 func Is(err error, code int) bool {
 	if e, ok := err.(UnexpectedStatusCodeError); ok {
