@@ -25,7 +25,7 @@ static-tests: FORCE
 
 cover.out: FORCE
 	@echo '>> go test...'
-	@go test -coverpkg github.com/majewsky/schwift/... -coverprofile $@
+	@go test -covermode count -coverpkg github.com/majewsky/schwift/... -coverprofile $@
 cover.html: cover.out
 	@echo '>> rendering cover.html...'
 	@go tool cover -html=$< -o $@
