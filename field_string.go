@@ -41,19 +41,19 @@ func (f FieldString) Get() string {
 	return f.h.Get(f.k)
 }
 
-//Set writes a new value for this header into the corresponding schwift.Headers
+//Set writes a new value for this header into the corresponding headers
 //instance.
 func (f FieldString) Set(value string) {
 	f.h.Set(f.k, value)
 }
 
-//Del removes this key from the original schwift.Headers instance, so that the
+//Del removes this key from the original headers instance, so that the
 //key will remain unchanged on the server during Update().
 func (f FieldString) Del() {
 	f.h.Del(f.k)
 }
 
-//Clear sets this key to an empty string in the original schwift.Headers
+//Clear sets this key to an empty string in the original headers
 //instance, so that the key will be removed on the server during Update().
 func (f FieldString) Clear() {
 	f.h.Clear(f.k)

@@ -19,8 +19,8 @@
 package schwift
 
 //FieldMetadata is a helper type that provides safe access to the metadata headers
-//in a SomethingHeaders instance. It cannot be directly constructed, but each
-//SomethingHeaders type has a method "Metadata" returning this type. For example:
+//in a headers instance. It cannot be directly constructed, but each headers
+//type has a method "Metadata" returning this type. For example:
 //
 //    hdr := make(ObjectHeaders)
 //    //the following two statements are equivalent

@@ -50,26 +50,24 @@ func (f FieldUint64) Get() uint64 {
 	return v
 }
 
-//Set writes a new value for this header into the corresponding schwift.Headers
+//Set writes a new value for this header into the corresponding headers
 //instance.
 func (f FieldUint64) Set(value uint64) {
 	f.h.Set(f.k, strconv.FormatUint(value, 10))
 }
 
-//Del removes this key from the original schwift.Headers instance, so that the
-//key will remain unchanged on the server during Update().
+//Del removes this key from the original headers instance, so that the key will
+//remain unchanged on the server during Update().
 func (f FieldUint64) Del() {
 	f.h.Del(f.k)
 }
 
-//Clear sets this key to an empty string in the original schwift.Headers
-//instance, so that the key will be removed on the server during Update().
+//Clear sets this key to an empty string in the original headers instance, so
+//that the key will be removed on the server during Update().
 func (f FieldUint64) Clear() {
 	f.h.Clear(f.k)
 }
 
-//validate is only used internally, but needs to be exported to cross package
-//boundaries.
 func (f FieldUint64) validate() error {
 	val := f.h.Get(f.k)
 	if val == "" {
@@ -99,21 +97,9 @@ func (f FieldUint64Readonly) Exists() bool {
 //Get returns the value for this header, or 0 if there is no value (or if it is
 //not a valid uint64).
 func (f FieldUint64Readonly) Get() uint64 {
-	v, err := strconv.ParseUint(f.h.Get(f.k), 10, 64)
-	if err != nil {
-		return 0
-	}
-	return v
+	return FieldUint64{f.h, f.k}.Get()
 }
 
 func (f FieldUint64Readonly) validate() error {
-	val := f.h.Get(f.k)
-	if val == "" {
-		return nil
-	}
-	_, err := strconv.ParseUint(val, 10, 64)
-	if err == nil {
-		return nil
-	}
-	return MalformedHeaderError{f.k, err}
+	return FieldUint64{f.h, f.k}.validate()
 }

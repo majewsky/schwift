@@ -8,7 +8,7 @@
 			{ "Header": "X-Account-Meta-Temp-URL-Key-2", "Attribute": "TempURLKey2", "Type": "String" },
 			{ "Header": "X-Account-Meta-Temp-URL-Key", "Attribute": "TempURLKey", "Type": "String" },
 			{ "Header": "X-Account-Object-Count", "Attribute": "ObjectCount", "Type": "Uint64Readonly" },
-			{ "Header": "X-Timestamp", "Attribute": "Timestamp", "Type": "UnixTimeReadonly" }
+			{ "Header": "X-Timestamp", "Attribute": "CreatedAt", "Type": "UnixTimeReadonly" }
 		]
 	},
 	"Container": {
@@ -26,8 +26,23 @@
 			{ "Header": "X-Container-Write", "Attribute": "WriteACL", "Type": "String" },
 			{ "Header": "X-History-Location", "Attribute": "HistoryLocation", "Type": "String" },
 			{ "Header": "X-Storage-Policy", "Attribute": "StoragePolicy", "Type": "String" },
-			{ "Header": "X-Timestamp", "Attribute": "Timestamp", "Type": "UnixTimeReadonly" },
+			{ "Header": "X-Timestamp", "Attribute": "CreatedAt", "Type": "UnixTimeReadonly" },
 			{ "Header": "X-Versions-Location", "Attribute": "VersionsLocation", "Type": "String" }
+		]
+	},
+	"Object": {
+		"Fields": [
+			{ "Header": "Content-Disposition", "Attribute": "ContentDisposition", "Type": "String" },
+			{ "Header": "Content-Encoding", "Attribute": "ContentEncoding", "Type": "String" },
+			{ "Header": "Content-Length", "Attribute": "SizeBytes", "Type": "Uint64" },
+			{ "Header": "Content-Type", "Attribute": "ContentType", "Type": "String" },
+			{ "Header": "Etag", "Attribute": "Etag", "Type": "String" },
+			{ "Header": "Last-Modified", "Attribute": "UpdatedAt", "Type": "HTTPTimeReadonly" },
+			{ "Header": "X-Delete-At", "Attribute": "ExpiresAt", "Type": "UnixTime" },
+			{ "Header": "X-Object-Meta-", "Attribute": "Metadata", "Type": "Metadata" },
+			{ "Header": "X-Symlink-Target-Account", "Attribute": "SymlinkTargetAccount", "Type": "String" },
+			{ "Header": "X-Symlink-Target", "Attribute": "SymlinkTarget", "Type": "String" },
+			{ "Header": "X-Timestamp", "Attribute": "CreatedAt", "Type": "UnixTimeReadonly" }
 		]
 	}
 }

@@ -64,21 +64,21 @@ func TestFieldTimestamp(t *testing.T) {
 			return
 		}
 
-		expectBool(t, hdr.Timestamp().Exists(), true)
+		expectBool(t, hdr.CreatedAt().Exists(), true)
 
-		actual := float64(hdr.Timestamp().Get().UnixNano()) / 1e9
+		actual := float64(hdr.CreatedAt().Get().UnixNano()) / 1e9
 		expected, _ := strconv.ParseFloat(hdr["X-Timestamp"], 64)
 		expectFloat64(t, actual, expected)
 	})
 
 	hdr := make(AccountHeaders)
-	expectBool(t, hdr.Timestamp().Exists(), false)
-	expectBool(t, hdr.Timestamp().Get().IsZero(), true)
+	expectBool(t, hdr.CreatedAt().Exists(), false)
+	expectBool(t, hdr.CreatedAt().Get().IsZero(), true)
 	expectError(t, hdr.Validate(), "")
 
 	hdr["X-Timestamp"] = "wtf"
-	expectBool(t, hdr.Timestamp().Exists(), true)
-	expectBool(t, hdr.Timestamp().Get().IsZero(), true)
+	expectBool(t, hdr.CreatedAt().Exists(), true)
+	expectBool(t, hdr.CreatedAt().Get().IsZero(), true)
 	expectError(t, hdr.Validate(), `Bad header X-Timestamp: strconv.ParseFloat: parsing "wtf": invalid syntax`)
 }
 

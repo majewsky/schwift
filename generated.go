@@ -73,7 +73,7 @@ func (h AccountHeaders) Validate() error {
 	if err := h.ObjectCount().validate(); err != nil {
 		return err
 	}
-	if err := h.Timestamp().validate(); err != nil {
+	if err := h.CreatedAt().validate(); err != nil {
 		return err
 	}
 	return evadeGolintComplaint1()
@@ -114,8 +114,8 @@ func (h AccountHeaders) ObjectCount() FieldUint64Readonly {
 	return FieldUint64Readonly{h, "X-Account-Object-Count"}
 }
 
-//Timestamp provides type-safe access to X-Timestamp headers.
-func (h AccountHeaders) Timestamp() FieldUnixTimeReadonly {
+//CreatedAt provides type-safe access to X-Timestamp headers.
+func (h AccountHeaders) CreatedAt() FieldUnixTimeReadonly {
 	return FieldUnixTimeReadonly{h, "X-Timestamp"}
 }
 
@@ -200,7 +200,7 @@ func (h ContainerHeaders) Validate() error {
 	if err := h.StoragePolicy().validate(); err != nil {
 		return err
 	}
-	if err := h.Timestamp().validate(); err != nil {
+	if err := h.CreatedAt().validate(); err != nil {
 		return err
 	}
 	if err := h.VersionsLocation().validate(); err != nil {
@@ -274,14 +274,151 @@ func (h ContainerHeaders) StoragePolicy() FieldString {
 	return FieldString{h, "X-Storage-Policy"}
 }
 
-//Timestamp provides type-safe access to X-Timestamp headers.
-func (h ContainerHeaders) Timestamp() FieldUnixTimeReadonly {
+//CreatedAt provides type-safe access to X-Timestamp headers.
+func (h ContainerHeaders) CreatedAt() FieldUnixTimeReadonly {
 	return FieldUnixTimeReadonly{h, "X-Timestamp"}
 }
 
 //VersionsLocation provides type-safe access to X-Versions-Location headers.
 func (h ContainerHeaders) VersionsLocation() FieldString {
 	return FieldString{h, "X-Versions-Location"}
+}
+
+//ObjectHeaders contains the headers for a schwift.Object instance.
+//
+//To read and write well-known headers, use the methods on this type.
+//To read and write arbitary headers, use the http.Header-like methods Get(),
+//Set(), Clear(), Del().
+type ObjectHeaders map[string]string
+
+//Clear sets the value for the specified header to the empty string. When the
+//Headers instance is then sent to the server with Update(), the server will
+//delete the value for that header; cf. Del().
+func (h ObjectHeaders) Clear(key string) {
+	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
+}
+
+//Del deletes a key from the Headers instance. When the Headers instance
+//is then sent to the server with Update(), Del() has different effects
+//depending on context because of Swift's inconsistent API:
+//
+//For most writable attributes, a key which has been deleted with Del() will
+//remain unchanged on the server. To remove the key on the server, use Clear()
+//instead.
+//
+//For object metadata (but not other object attributes), deleting a key will
+//cause that key to be deleted on the server. Del() is identical to Clear() in
+//this case.
+func (h ObjectHeaders) Del(key string) {
+	delete(h, textproto.CanonicalMIMEHeaderKey(key))
+}
+
+//Get returns the value for the specified header.
+func (h ObjectHeaders) Get(key string) string {
+	return h[textproto.CanonicalMIMEHeaderKey(key)]
+}
+
+//Set sets a new value for the specified header. Any existing value will be
+//overwritten.
+func (h ObjectHeaders) Set(key, value string) {
+	h[textproto.CanonicalMIMEHeaderKey(key)] = value
+}
+
+//Validate returns MalformedHeaderError if the value of any well-known header
+//does not conform to its data type. This is called automatically by Schwift
+//when preparing an ObjectHeaders instance from a GET/HEAD response, so you
+//usually do not need to do it yourself. You will get the validation error from
+//the Object method doing the request, e.g. Headers().
+func (h ObjectHeaders) Validate() error {
+	if err := h.ContentDisposition().validate(); err != nil {
+		return err
+	}
+	if err := h.ContentEncoding().validate(); err != nil {
+		return err
+	}
+	if err := h.SizeBytes().validate(); err != nil {
+		return err
+	}
+	if err := h.ContentType().validate(); err != nil {
+		return err
+	}
+	if err := h.Etag().validate(); err != nil {
+		return err
+	}
+	if err := h.UpdatedAt().validate(); err != nil {
+		return err
+	}
+	if err := h.ExpiresAt().validate(); err != nil {
+		return err
+	}
+	if err := h.Metadata().validate(); err != nil {
+		return err
+	}
+	if err := h.SymlinkTargetAccount().validate(); err != nil {
+		return err
+	}
+	if err := h.SymlinkTarget().validate(); err != nil {
+		return err
+	}
+	if err := h.CreatedAt().validate(); err != nil {
+		return err
+	}
+	return evadeGolintComplaint1()
+}
+
+//ContentDisposition provides type-safe access to Content-Disposition headers.
+func (h ObjectHeaders) ContentDisposition() FieldString {
+	return FieldString{h, "Content-Disposition"}
+}
+
+//ContentEncoding provides type-safe access to Content-Encoding headers.
+func (h ObjectHeaders) ContentEncoding() FieldString {
+	return FieldString{h, "Content-Encoding"}
+}
+
+//SizeBytes provides type-safe access to Content-Length headers.
+func (h ObjectHeaders) SizeBytes() FieldUint64 {
+	return FieldUint64{h, "Content-Length"}
+}
+
+//ContentType provides type-safe access to Content-Type headers.
+func (h ObjectHeaders) ContentType() FieldString {
+	return FieldString{h, "Content-Type"}
+}
+
+//Etag provides type-safe access to Etag headers.
+func (h ObjectHeaders) Etag() FieldString {
+	return FieldString{h, "Etag"}
+}
+
+//UpdatedAt provides type-safe access to Last-Modified headers.
+func (h ObjectHeaders) UpdatedAt() FieldHTTPTimeReadonly {
+	return FieldHTTPTimeReadonly{h, "Last-Modified"}
+}
+
+//ExpiresAt provides type-safe access to X-Delete-At headers.
+func (h ObjectHeaders) ExpiresAt() FieldUnixTime {
+	return FieldUnixTime{h, "X-Delete-At"}
+}
+
+//Metadata provides type-safe access to X-Object-Meta- headers.
+func (h ObjectHeaders) Metadata() FieldMetadata {
+	return FieldMetadata{h, "X-Object-Meta-"}
+}
+
+//SymlinkTargetAccount provides type-safe access to X-Symlink-Target-Account headers.
+func (h ObjectHeaders) SymlinkTargetAccount() FieldString {
+	return FieldString{h, "X-Symlink-Target-Account"}
+}
+
+//SymlinkTarget provides type-safe access to X-Symlink-Target headers.
+func (h ObjectHeaders) SymlinkTarget() FieldString {
+	return FieldString{h, "X-Symlink-Target"}
+}
+
+//CreatedAt provides type-safe access to X-Timestamp headers.
+func (h ObjectHeaders) CreatedAt() FieldUnixTimeReadonly {
+	return FieldUnixTimeReadonly{h, "X-Timestamp"}
 }
 
 func evadeGolintComplaint1() error {
