@@ -128,6 +128,9 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 	for key, value := range provider.AuthenticatedHeaders() {
 		req.Header.Set(key, value)
 	}
+	if r.Body != nil {
+		req.Header.Set("Expect", "100-continue")
+	}
 
 	resp, err := provider.HTTPClient.Do(req)
 	if err != nil {

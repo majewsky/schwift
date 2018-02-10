@@ -63,8 +63,10 @@ func (c *Container) Exists() (bool, error) {
 	return true, nil
 }
 
-//Headers returns the ContainerHeaders for this account. If the ContainerHeaders
-//has not been cached yet, a HEAD request is issued on the account.
+//Headers returns the ContainerHeaders for this container. If the ContainerHeaders
+//has not been cached yet, a HEAD request is issued on the container.
+//
+//This operation fails with http.StatusNotFound if the container does not exist.
 func (c *Container) Headers() (ContainerHeaders, error) {
 	if c.headers != nil {
 		return *c.headers, nil
@@ -151,7 +153,7 @@ func (c *Container) Delete(headers ContainerHeaders, opts *RequestOptions) error
 }
 
 //Invalidate clears the internal cache of this Container instance. The next call
-//to Headers() on this instance will issue a HEAD request on the account.
+//to Headers() on this instance will issue a HEAD request on the container.
 func (c *Container) Invalidate() {
 	c.headers = nil
 }
@@ -171,5 +173,3 @@ func (c *Container) EnsureExists() (*Container, error) {
 	}.Do(c.a.client)
 	return c, err
 }
-
-// TODO object listing

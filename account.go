@@ -83,6 +83,8 @@ func (a *Account) Client() *gophercloud.ServiceClient {
 
 //Headers returns the AccountHeaders for this account. If the AccountHeaders
 //has not been cached yet, a HEAD request is issued on the account.
+//
+//This operation fails with http.StatusNotFound if the account does not exist.
 func (a *Account) Headers() (AccountHeaders, error) {
 	if a.headers != nil {
 		return *a.headers, nil
