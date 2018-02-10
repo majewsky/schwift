@@ -121,6 +121,13 @@ func expectFloat64(t *testing.T, actual float64, expected float64) {
 	}
 }
 
+func expectInt(t *testing.T, actual int, expected int) {
+	t.Helper()
+	if actual != expected {
+		t.Errorf("expected value %d, got %d instead\n", expected, actual)
+	}
+}
+
 func expectUint64(t *testing.T, actual uint64, expected uint64) {
 	t.Helper()
 	if actual != expected {
@@ -179,4 +186,8 @@ func expectHeaders(t *testing.T, actual map[string]string, expected map[string]s
 			t.Errorf(`expected "%s: %s", got "%s: %s" instead`, k, ev, k, av)
 		}
 	}
+}
+
+func expectSuccess(t *testing.T, actual error) (ok bool) {
+	return expectError(t, actual, "")
 }

@@ -24,9 +24,6 @@ import (
 )
 
 func headersToHTTP(h map[string]string) http.Header {
-	if h == nil {
-		return nil
-	}
 	dest := make(http.Header, len(h))
 	for k, v := range h {
 		dest.Set(k, v)
@@ -35,9 +32,6 @@ func headersToHTTP(h map[string]string) http.Header {
 }
 
 func headersFromHTTP(src http.Header) map[string]string {
-	if src == nil {
-		return nil
-	}
 	h := make(map[string]string, len(src))
 	for k, v := range src {
 		if len(v) > 0 {

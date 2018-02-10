@@ -76,12 +76,11 @@ type ContainerInfo struct {
 	LastModified time.Time
 }
 
-func (i ContainerIterator) request(limit *uint, detailed bool) Request {
+func (i ContainerIterator) request(limit int, detailed bool) Request {
 	r := Request{
-		Method:            "GET",
-		Headers:           headersToHTTP(i.Headers),
-		Options:           cloneRequestOptions(i.Options),
-		ExpectStatusCodes: []int{200},
+		Method:  "GET",
+		Headers: headersToHTTP(i.Headers),
+		Options: cloneRequestOptions(i.Options),
 	}
 
 	if i.Prefix != "" {
@@ -94,25 +93,27 @@ func (i ContainerIterator) request(limit *uint, detailed bool) Request {
 		r.Options.Values.Set("marker", i.marker)
 	}
 
-	if limit == nil {
+	if limit < 0 {
 		r.Options.Values.Del("limit")
 	} else {
-		r.Options.Values.Set("limit", strconv.FormatUint(uint64(*limit), 10))
+		r.Options.Values.Set("limit", strconv.FormatUint(uint64(limit), 10))
 	}
 
 	if detailed {
 		r.Headers.Set("Accept", "application/json")
 		r.Options.Values.Set("format", "json")
+		r.ExpectStatusCodes = []int{200}
 	} else {
 		r.Headers.Set("Accept", "text/plain")
 		r.Options.Values.Set("format", "plain")
+		r.ExpectStatusCodes = []int{200, 204}
 	}
 
 	return r
 }
 
 //NextPage queries Swift for the next page of container names. If limit is
-//given, not more than that container names will be returned at once.  Note
+//>= 0, not more than that container names will be returned at once. Note
 //that the server also has a limit for how many containers to list in one
 //request; the lower limit wins.
 //
@@ -120,7 +121,7 @@ func (i ContainerIterator) request(limit *uint, detailed bool) Request {
 //
 //This method offers maximal flexibility, but most users will prefer the
 //simpler interfaces offered by Collect() and Foreach().
-func (i *ContainerIterator) NextPage(limit *uint) ([]*Container, error) {
+func (i *ContainerIterator) NextPage(limit int) ([]*Container, error) {
 	if i.eof {
 		return nil, nil
 	}
@@ -128,14 +129,19 @@ func (i *ContainerIterator) NextPage(limit *uint) ([]*Container, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	buf, err := collectResponseBody(resp)
 	if err != nil {
 		return nil, err
 	}
-	names := strings.Split(string(buf), "\n")
-	result := make([]*Container, len(names))
-	for idx, name := range names {
-		result[idx] = i.Account.Container(name)
+	bufStr := strings.TrimSuffix(string(buf), "\n")
+	var result []*Container
+	if bufStr != "" {
+		names := strings.Split(bufStr, "\n")
+		result = make([]*Container, len(names))
+		for idx, name := range names {
+			result[idx] = i.Account.Container(name)
+		}
 	}
 
 	if len(result) == 0 {
@@ -149,11 +155,11 @@ func (i *ContainerIterator) NextPage(limit *uint) ([]*Container, error) {
 }
 
 //NextPageDetailed is like NextPage, but includes basic metadata.
-func (i *ContainerIterator) NextPageDetailed(limit *uint) ([]ContainerInfo, error) {
+func (i *ContainerIterator) NextPageDetailed(limit int) ([]ContainerInfo, error) {
 	if i.eof {
 		return nil, nil
 	}
-	resp, err := i.request(limit, false).Do(i.Account.client)
+	resp, err := i.request(limit, true).Do(i.Account.client)
 	if err != nil {
 		return nil, err
 	}
@@ -165,8 +171,9 @@ func (i *ContainerIterator) NextPageDetailed(limit *uint) ([]ContainerInfo, erro
 		Name            string `json:"name"`
 	}
 	err = json.NewDecoder(resp.Body).Decode(&document)
+	closeErr := resp.Body.Close()
 	if err == nil {
-		err = resp.Body.Close()
+		err = closeErr
 	}
 	if err != nil {
 		return nil, err
@@ -177,7 +184,7 @@ func (i *ContainerIterator) NextPageDetailed(limit *uint) ([]ContainerInfo, erro
 		result[idx].Container = i.Account.Container(data.Name)
 		result[idx].BytesUsed = data.BytesUsed
 		result[idx].ObjectCount = data.ObjectCount
-		result[idx].LastModified, err = time.Parse(time.RFC3339Nano, data.LastModifiedStr)
+		result[idx].LastModified, err = time.Parse(time.RFC3339Nano, data.LastModifiedStr+"Z")
 		if err != nil {
 			//this error is sufficiently obscure that we don't need to expose a type for it
 			return nil, fmt.Errorf("Bad field containers[%d].last_modified: %s", idx, err.Error())
@@ -199,7 +206,7 @@ func (i *ContainerIterator) NextPageDetailed(limit *uint) ([]ContainerInfo, erro
 //or when the callback returns a non-nil error.
 func (i *ContainerIterator) Foreach(callback func(*Container) error) error {
 	for {
-		containers, err := i.NextPage(nil)
+		containers, err := i.NextPage(-1)
 		if err != nil {
 			return err
 		}
@@ -218,7 +225,7 @@ func (i *ContainerIterator) Foreach(callback func(*Container) error) error {
 //ForeachDetailed is like Foreach, but includes basic metadata.
 func (i *ContainerIterator) ForeachDetailed(callback func(ContainerInfo) error) error {
 	for {
-		infos, err := i.NextPageDetailed(nil)
+		infos, err := i.NextPageDetailed(-1)
 		if err != nil {
 			return err
 		}
@@ -240,7 +247,7 @@ func (i *ContainerIterator) ForeachDetailed(callback func(ContainerInfo) error) 
 func (i *ContainerIterator) Collect() ([]*Container, error) {
 	var result []*Container
 	for {
-		containers, err := i.NextPage(nil)
+		containers, err := i.NextPage(-1)
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +262,7 @@ func (i *ContainerIterator) Collect() ([]*Container, error) {
 func (i *ContainerIterator) CollectDetailed() ([]ContainerInfo, error) {
 	var result []ContainerInfo
 	for {
-		infos, err := i.NextPageDetailed(nil)
+		infos, err := i.NextPageDetailed(-1)
 		if err != nil {
 			return nil, err
 		}
