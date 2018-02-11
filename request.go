@@ -70,6 +70,9 @@ type Request struct {
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
 	//schwift.UnexpectedStatusCodeError may be returned.
 	ExpectStatusCodes []int
+	//DrainResponseBody can be set if the caller is not interested in the
+	//response body. This is implied for Response.StatusCode == 204.
+	DrainResponseBody bool
 }
 
 //URL returns the full URL for this request.
@@ -144,7 +147,11 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 	}
 	for _, code := range r.ExpectStatusCodes {
 		if code == resp.StatusCode {
-			return resp, nil
+			var err error
+			if r.DrainResponseBody || resp.StatusCode == 204 {
+				err = drainResponseBody(resp)
+			}
+			return resp, err
 		}
 	}
 

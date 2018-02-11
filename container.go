@@ -123,6 +123,7 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
+		DrainResponseBody: true,
 	}.Do(c.a.client)
 	if err == nil {
 		c.Invalidate()
@@ -170,6 +171,7 @@ func (c *Container) EnsureExists() (*Container, error) {
 		Method:            "PUT",
 		ContainerName:     c.name,
 		ExpectStatusCodes: []int{201, 202},
+		DrainResponseBody: true,
 	}.Do(c.a.client)
 	return c, err
 }

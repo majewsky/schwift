@@ -143,6 +143,7 @@ func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestO
 		Options:           opts,
 		Body:              content,
 		ExpectStatusCodes: []int{201},
+		DrainResponseBody: true,
 	}.Do(o.c.a.client)
 	if err == nil {
 		o.Invalidate()

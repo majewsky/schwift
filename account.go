@@ -143,6 +143,7 @@ func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
+		DrainResponseBody: true,
 	}.Do(a.client)
 	if err == nil {
 		a.Invalidate()
