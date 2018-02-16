@@ -24,13 +24,9 @@ func (h AccountHeaders) Clear(key string) {
 	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
 }
 
-//Del deletes a key from the Headers instance. When the Headers instance
-//is then sent to the server with Update(), Del() has different effects
-//depending on context because of Swift's inconsistent API:
-//
-//For most writable attributes, a key which has been deleted with Del() will
-//remain unchanged on the server. To remove the key on the server, use Clear()
-//instead.
+//Del deletes a key from the Headers instance. When the Headers instance is
+//then sent to the server with Update(), a key which has been deleted with
+//Del() will remain unchanged on the server.
 func (h AccountHeaders) Del(key string) {
 	delete(h, textproto.CanonicalMIMEHeaderKey(key))
 }
@@ -133,13 +129,9 @@ func (h ContainerHeaders) Clear(key string) {
 	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
 }
 
-//Del deletes a key from the Headers instance. When the Headers instance
-//is then sent to the server with Update(), Del() has different effects
-//depending on context because of Swift's inconsistent API:
-//
-//For most writable attributes, a key which has been deleted with Del() will
-//remain unchanged on the server. To remove the key on the server, use Clear()
-//instead.
+//Del deletes a key from the Headers instance. When the Headers instance is
+//then sent to the server with Update(), a key which has been deleted with
+//Del() will remain unchanged on the server.
 func (h ContainerHeaders) Del(key string) {
 	delete(h, textproto.CanonicalMIMEHeaderKey(key))
 }
