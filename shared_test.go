@@ -22,6 +22,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math"
+	"net/http"
+	"net/url"
 	"os"
 	"testing"
 
@@ -29,6 +31,23 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
 )
+
+//This function can be used during debugging to redirect the HTTP requests for
+//a specific unit test through a mitmproxy. Put this at the beginning of your
+//testcase like so:
+//
+//	testWithAccount(t, func(a *Account) {
+//	    useProxy(a, "http://localhost:8888")
+//	    ...
+//
+//	testWithContainer(t, func(c *Container) {
+//	    useProxy(c.Account(), "http://localhost:8888")
+//	    ...
+func useProxy(a *Account, proxyURL string) {
+	t := *(http.DefaultTransport.(*http.Transport))
+	t.Proxy = func(*http.Request) (*url.URL, error) { return url.Parse(proxyURL) }
+	a.client.ProviderClient.HTTPClient.Transport = &t
+}
 
 func testWithAccount(t *testing.T, testCode func(a *Account)) {
 	stAuth := os.Getenv("ST_AUTH")
