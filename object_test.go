@@ -19,65 +19,43 @@
 package schwift
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 )
 
-func TestContainerLifecycle(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
-		containerName := getRandomName()
-		c := a.Container(containerName)
+func TestObjectLifecycle(t *testing.T) {
+	testWithContainer(t, func(c *Container) {
+		objectName := getRandomName()
+		o := c.Object(objectName)
 
-		expectString(t, c.Name(), containerName)
-		if c.Account() != a {
-			t.Errorf("expected c.Account() = %#v, got %#v instead\n", a, c.Account())
+		expectString(t, o.Name(), objectName)
+		if o.Container() != c {
+			t.Errorf("expected o.Container() = %#v, got %#v instead\n", c, o.Container())
 		}
 
-		exists, err := c.Exists()
+		exists, err := o.Exists()
 		expectError(t, err, "")
 		expectBool(t, exists, false)
 
-		_, err = c.Headers()
+		_, err = o.Headers()
 		expectError(t, err, "expected 204 response, got 404 instead")
 		expectBool(t, Is(err, http.StatusNotFound), true)
 		expectBool(t, Is(err, http.StatusNoContent), false)
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
-		err = c.Delete(nil, nil)
+		err = o.Delete(nil, nil)
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
-		err = c.Create(nil, nil)
+		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
 		expectError(t, err, "")
 
-		exists, err = c.Exists()
+		exists, err = o.Exists()
 		expectError(t, err, "")
 		expectBool(t, exists, true)
 
-		err = c.Delete(nil, nil)
+		err = o.Delete(nil, nil)
 		expectError(t, err, "")
-	})
-}
-
-func TestContainerUpdate(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
-
-		hdr, err := c.Headers()
-		expectError(t, err, "")
-		expectBool(t, hdr.ObjectCount().Exists(), true)
-		expectUint64(t, hdr.ObjectCount().Get(), 0)
-
-		hdr = make(ContainerHeaders)
-		hdr.ObjectCountQuota().Set(23)
-		hdr.BytesUsedQuota().Set(42)
-
-		err = c.Update(hdr, nil)
-		expectError(t, err, "")
-
-		hdr, err = c.Headers()
-		expectError(t, err, "")
-		expectUint64(t, hdr.BytesUsedQuota().Get(), 42)
-		expectUint64(t, hdr.ObjectCountQuota().Get(), 23)
-
 	})
 }

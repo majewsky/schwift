@@ -88,10 +88,12 @@ func (o *Object) Headers() (ObjectHeaders, error) {
 	}
 
 	resp, err := Request{
-		Method:            "HEAD",
-		ContainerName:     o.c.name,
-		ObjectName:        o.name,
-		ExpectStatusCodes: []int{204},
+		Method:        "HEAD",
+		ContainerName: o.c.name,
+		ObjectName:    o.name,
+		//since Openstack LOVES to be inconsistent with everything (incl. itself),
+		//this returns 200 instead of 204
+		ExpectStatusCodes: []int{200},
 	}.Do(o.c.a.client)
 	if err != nil {
 		return ObjectHeaders{}, err
