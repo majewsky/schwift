@@ -37,16 +37,19 @@ import (
 //testcase like so:
 //
 //	testWithAccount(t, func(a *Account) {
-//	    useProxy(a, "http://localhost:8888")
-//	    ...
+//	    withProxy(a, "http://localhost:8888", func() {
+//	        ...
 //
 //	testWithContainer(t, func(c *Container) {
-//	    useProxy(c.Account(), "http://localhost:8888")
-//	    ...
-func useProxy(a *Account, proxyURL string) {
-	t := *(http.DefaultTransport.(*http.Transport))
+//	    withProxy(c.Account(), "http://localhost:8888", func() {
+//	        ...
+func withProxy(a *Account, proxyURL string, action func()) {
+	t := http.DefaultTransport.(*http.Transport)
+	proxyOrig := t.Proxy
 	t.Proxy = func(*http.Request) (*url.URL, error) { return url.Parse(proxyURL) }
-	a.client.ProviderClient.HTTPClient.Transport = &t
+	a.client.ProviderClient.HTTPClient.Transport = t
+	action()
+	t.Proxy = proxyOrig
 }
 
 func testWithAccount(t *testing.T, testCode func(a *Account)) {
