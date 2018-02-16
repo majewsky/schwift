@@ -20,6 +20,7 @@ package schwift
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -57,11 +58,11 @@ func (f FieldHTTPTimeReadonly) Exists() bool {
 //Get returns the value for this header, or the zero value if there is no value
 //(or if it is not a valid timestamp).
 func (f FieldHTTPTimeReadonly) Get() time.Time {
-	v, err := strconv.ParseFloat(f.h.Get(f.k), 64)
+	t, err := http.ParseTime(f.h.Get(f.k))
 	if err != nil {
 		return time.Time{}
 	}
-	return time.Unix(0, int64(1e9*v))
+	return t
 }
 
 func (f FieldHTTPTimeReadonly) validate() error {
@@ -69,7 +70,7 @@ func (f FieldHTTPTimeReadonly) validate() error {
 	if val == "" {
 		return nil
 	}
-	_, err := strconv.ParseFloat(val, 64)
+	_, err := http.ParseTime(val)
 	if err == nil {
 		return nil
 	}
