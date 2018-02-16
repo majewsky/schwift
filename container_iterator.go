@@ -19,12 +19,20 @@
 package schwift
 
 import (
-	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 )
+
+//ContainerInfo is a result type returned by ContainerIterator for detailed
+//container listings. The metadata in this type is a subset of Container.Headers(),
+//but since it is returned as part of the detailed container listing, it can be
+//obtained without making additional HEAD requests on the container(s).
+type ContainerInfo struct {
+	Container    *Container
+	ObjectCount  uint64
+	BytesUsed    uint64
+	LastModified time.Time
+}
 
 //ContainerIterator iterates over the accounts in a container. It is typically
 //constructed with the Account.Containers() method. For example:
@@ -61,55 +69,14 @@ type ContainerIterator struct {
 	//Options may contain additional query parameters for the GET request.
 	Options *RequestOptions
 
-	marker string
-	eof    bool
+	base *iteratorBase
 }
 
-//ContainerInfo is a result type returned by ContainerIterator for detailed
-//container listings. The metadata in this type is a subset of Container.Headers(),
-//but since it is returned as part of the detailed container listing, it can be
-//obtained without making additional HEAD requests on the container(s).
-type ContainerInfo struct {
-	Container    *Container
-	ObjectCount  uint64
-	BytesUsed    uint64
-	LastModified time.Time
-}
-
-func (i ContainerIterator) request(limit int, detailed bool) Request {
-	r := Request{
-		Method:  "GET",
-		Headers: headersToHTTP(i.Headers),
-		Options: cloneRequestOptions(i.Options),
+func (i *ContainerIterator) getBase() *iteratorBase {
+	if i.base == nil {
+		i.base = &iteratorBase{i: i}
 	}
-
-	if i.Prefix != "" {
-		r.Options.Values.Set("prefix", i.Prefix)
-	}
-
-	if i.marker == "" {
-		r.Options.Values.Del("marker")
-	} else {
-		r.Options.Values.Set("marker", i.marker)
-	}
-
-	if limit < 0 {
-		r.Options.Values.Del("limit")
-	} else {
-		r.Options.Values.Set("limit", strconv.FormatUint(uint64(limit), 10))
-	}
-
-	if detailed {
-		r.Headers.Set("Accept", "application/json")
-		r.Options.Values.Set("format", "json")
-		r.ExpectStatusCodes = []int{200}
-	} else {
-		r.Headers.Set("Accept", "text/plain")
-		r.Options.Values.Set("format", "plain")
-		r.ExpectStatusCodes = []int{200, 204}
-	}
-
-	return r
+	return i.base
 }
 
 //NextPage queries Swift for the next page of container names. If limit is
@@ -122,47 +89,21 @@ func (i ContainerIterator) request(limit int, detailed bool) Request {
 //This method offers maximal flexibility, but most users will prefer the
 //simpler interfaces offered by Collect() and Foreach().
 func (i *ContainerIterator) NextPage(limit int) ([]*Container, error) {
-	if i.eof {
-		return nil, nil
-	}
-	resp, err := i.request(limit, false).Do(i.Account.client)
+	names, err := i.getBase().nextPage(limit)
 	if err != nil {
 		return nil, err
 	}
 
-	buf, err := collectResponseBody(resp)
-	if err != nil {
-		return nil, err
-	}
-	bufStr := strings.TrimSuffix(string(buf), "\n")
-	var result []*Container
-	if bufStr != "" {
-		names := strings.Split(bufStr, "\n")
-		result = make([]*Container, len(names))
-		for idx, name := range names {
-			result[idx] = i.Account.Container(name)
-		}
-	}
-
-	if len(result) == 0 {
-		i.eof = true
-		i.marker = ""
-	} else {
-		i.eof = false
-		i.marker = result[len(result)-1].Name()
+	result := make([]*Container, len(names))
+	for idx, name := range names {
+		result[idx] = i.Account.Container(name)
 	}
 	return result, nil
 }
 
 //NextPageDetailed is like NextPage, but includes basic metadata.
 func (i *ContainerIterator) NextPageDetailed(limit int) ([]ContainerInfo, error) {
-	if i.eof {
-		return nil, nil
-	}
-	resp, err := i.request(limit, true).Do(i.Account.client)
-	if err != nil {
-		return nil, err
-	}
+	b := i.getBase()
 
 	var document []struct {
 		BytesUsed       uint64 `json:"bytes"`
@@ -170,13 +111,13 @@ func (i *ContainerIterator) NextPageDetailed(limit int) ([]ContainerInfo, error)
 		LastModifiedStr string `json:"last_modified"`
 		Name            string `json:"name"`
 	}
-	err = json.NewDecoder(resp.Body).Decode(&document)
-	closeErr := resp.Body.Close()
-	if err == nil {
-		err = closeErr
-	}
+	err := b.nextPageDetailed(limit, &document)
 	if err != nil {
 		return nil, err
+	}
+	if len(document) == 0 {
+		b.setMarker("") //indicate EOF to iteratorBase
+		return nil, nil
 	}
 
 	result := make([]ContainerInfo, len(document))
@@ -191,13 +132,7 @@ func (i *ContainerIterator) NextPageDetailed(limit int) ([]ContainerInfo, error)
 		}
 	}
 
-	if len(result) == 0 {
-		i.eof = true
-		i.marker = ""
-	} else {
-		i.eof = false
-		i.marker = result[len(result)-1].Container.Name()
-	}
+	b.setMarker(result[len(result)-1].Container.Name())
 	return result, nil
 }
 
