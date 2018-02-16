@@ -19,6 +19,10 @@
 package schwift
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"hash"
 	"io"
 	"net/http"
 )
@@ -132,12 +136,47 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 //Upload creates the object using a PUT request. To add URL parameters, pass
 //a non-nil *RequestOptions.
 //
+//If you do not have an io.Reader, but you have a []byte or string instance
+//containing the object, wrap it in a *bytes.Reader instance like so:
+//
+//	var buffer []byte
+//	o.Upload(bytes.NewReader(buffer), headers, opts)
+//
+//	//or...
+//	var buffer string
+//	o.Upload(bytes.NewReader([]byte(buffer)), headers, opts)
+//
+//If content is a *bytes.Reader or a *bytes.Buffer instance, the Content-Length
+//and Etag request headers will be computed automatically. Otherwise, it is
+//highly recommended that the caller set these headers (if possible) to allow
+//the server to check the integrity of the uploaded file.
+//
+//If Etag and/or Content-Length is supplied and the content does not match
+//these parameters, http.StatusUnprocessableEntity is returned. If Etag is not
+//supplied and cannot be computed in advance, Upload() will compute the Etag as
+//data is read from the io.Reader, and compare the result to the Etag returned
+//by Swift, returning ErrChecksumMismatch in case of mismatch.
+//
 //This function can be used regardless of whether the object exists or not.
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
 func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestOptions) error {
-	//TODO check hash
-	_, err := Request{
+	if headers == nil {
+		headers = make(ObjectHeaders)
+	}
+	tryComputeContentLength(content, headers)
+	tryComputeEtag(content, headers)
+
+	//could not compute Etag in advance -> need to check on the fly
+	var hasher hash.Hash
+	if !headers.Etag().Exists() {
+		hasher = md5.New()
+		if content != nil {
+			content = io.TeeReader(content, hasher)
+		}
+	}
+
+	resp, err := Request{
 		Method:            "PUT",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
@@ -147,10 +186,53 @@ func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestO
 		ExpectStatusCodes: []int{201},
 		DrainResponseBody: true,
 	}.Do(o.c.a.client)
-	if err == nil {
-		o.Invalidate()
+	if err != nil {
+		return err
 	}
-	return err
+	o.Invalidate()
+
+	if hasher != nil {
+		expectedEtag := hex.EncodeToString(hasher.Sum(nil))
+		if expectedEtag != resp.Header.Get("Etag") {
+			return ErrChecksumMismatch
+		}
+	}
+
+	return nil
+}
+
+func tryComputeContentLength(content io.Reader, headers ObjectHeaders) {
+	h := headers.SizeBytes()
+	if h.Exists() {
+		return
+	}
+	switch r := content.(type) {
+	case *bytes.Buffer:
+		h.Set(uint64(r.Len()))
+	case *bytes.Reader:
+		h.Set(uint64(r.Len()))
+	}
+}
+
+func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
+	h := headers.Etag()
+	if h.Exists() {
+		return
+	}
+	switch r := content.(type) {
+	case *bytes.Buffer:
+		//bytes.Buffer has a method that returns the unread portion of the buffer,
+		//so this one is easy
+		sum := md5.Sum(r.Bytes())
+		h.Set(hex.EncodeToString(sum[:]))
+	case *bytes.Reader:
+		//bytes.Reader does not have such a method, but it is an io.Seeker, so we
+		//can read the entire thing and then seek back to where we started
+		hash := md5.New()
+		n, _ := r.WriteTo(hash)
+		r.Seek(-n, io.SeekCurrent)
+		h.Set(hex.EncodeToString(hash.Sum(nil)))
+	}
 }
 
 //Delete deletes the object using a DELETE request. To add URL parameters,

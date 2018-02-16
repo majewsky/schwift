@@ -27,6 +27,9 @@ import (
 )
 
 var (
+	//ErrChecksumMismatch is returned by Object.Upload() when the Etag in the
+	//server response does not match the uploaded data.
+	ErrChecksumMismatch = errors.New("Etag on uploaded object does not match MD5 checksum of uploaded data")
 	//ErrNoContainerName is returned by Request.Do() if ObjectName is given, but
 	//ContainerName is empty.
 	ErrNoContainerName = errors.New("missing container name")

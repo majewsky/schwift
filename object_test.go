@@ -39,7 +39,7 @@ func TestObjectLifecycle(t *testing.T) {
 		expectBool(t, exists, false)
 
 		_, err = o.Headers()
-		expectError(t, err, "expected 204 response, got 404 instead")
+		expectError(t, err, "expected 200 response, got 404 instead")
 		expectBool(t, Is(err, http.StatusNotFound), true)
 		expectBool(t, Is(err, http.StatusNoContent), false)
 
