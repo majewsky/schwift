@@ -28,20 +28,6 @@ import (
 	"github.com/gophercloud/gophercloud"
 )
 
-var okCodes []int
-
-func init() {
-	//prepare input for gophercloud.RequestOpts.OkCodes such that gophercloud's
-	//error handling is fused
-	for code := 100; code < 600; code++ {
-		//as an exception, 401s are handled by Gophercloud because we want to use its
-		//internal token renewal logic
-		if code != 401 {
-			okCodes = append(okCodes, code)
-		}
-	}
-}
-
 //RequestOptions contains additional headers and values for a request.
 type RequestOptions struct {
 	Values url.Values
