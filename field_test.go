@@ -19,6 +19,7 @@
 package schwift
 
 import (
+	"net/http"
 	"strconv"
 	"testing"
 )
@@ -80,6 +81,36 @@ func TestFieldTimestamp(t *testing.T) {
 	expectBool(t, hdr.CreatedAt().Exists(), true)
 	expectBool(t, hdr.CreatedAt().Get().IsZero(), true)
 	expectError(t, hdr.Validate(), `Bad header X-Timestamp: strconv.ParseFloat: parsing "wtf": invalid syntax`)
+}
+
+func TestFieldHTTPTimestamp(t *testing.T) {
+	testWithContainer(t, func(c *Container) {
+		obj := c.Object("test")
+		err := obj.Upload(nil, nil, nil)
+		if !expectSuccess(t, err) {
+			return
+		}
+
+		hdr, err := obj.Headers()
+		if !expectSuccess(t, err) {
+			return
+		}
+		expectBool(t, hdr.UpdatedAt().Exists(), true)
+
+		actual := hdr.UpdatedAt().Get()
+		expected, _ := http.ParseTime(hdr.Get("Last-Modified"))
+		expectInt64(t, actual.Unix(), expected.Unix())
+	})
+
+	hdr := make(ObjectHeaders)
+	expectBool(t, hdr.UpdatedAt().Exists(), false)
+	expectBool(t, hdr.UpdatedAt().Get().IsZero(), true)
+	expectError(t, hdr.Validate(), "")
+
+	hdr["Last-Modified"] = "wtf"
+	expectBool(t, hdr.UpdatedAt().Exists(), true)
+	expectBool(t, hdr.UpdatedAt().Get().IsZero(), true)
+	expectError(t, hdr.Validate(), `Bad header Last-Modified: parsing time "wtf" as "Mon Jan _2 15:04:05 2006": cannot parse "wtf" as "Mon"`)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
