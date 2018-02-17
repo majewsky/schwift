@@ -37,7 +37,7 @@ type ContainerInfo struct {
 //ContainerIterator iterates over the accounts in a container. It is typically
 //constructed with the Account.Containers() method. For example:
 //
-//  //either this...
+//	//either this...
 //	iter := account.Containers()
 //	iter.Prefix = "test-"
 //	containers, err := iter.Collect()

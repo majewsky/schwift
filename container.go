@@ -175,3 +175,25 @@ func (c *Container) EnsureExists() (*Container, error) {
 	}.Do(c.a.client)
 	return c, err
 }
+
+//Objects returns an ObjectIterator that lists the objects in this
+//container. The most common use case is:
+//
+//	objects, err := container.Objects().Collect()
+//
+//You can extend this by configuring the iterator before collecting the results:
+//
+//	iter := container.Objects()
+//	iter.Prefix = "test-"
+//	objects, err := iter.Collect()
+//
+//Or you can use a different iteration method:
+//
+//	err := container.Objects().ForeachDetailed(func (info ObjectInfo) error {
+//	    log.Printf("object %s is %d bytes large!\n",
+//	        info.Object.Name(), info.SizeBytes)
+//	})
+//
+func (c *Container) Objects() *ObjectIterator {
+	return &ObjectIterator{Container: c}
+}

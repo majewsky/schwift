@@ -40,6 +40,12 @@ func (i ContainerIterator) getPrefix() string             { return i.Prefix }
 func (i ContainerIterator) getHeaders() map[string]string { return i.Headers }
 func (i ContainerIterator) getOptions() *RequestOptions   { return i.Options }
 
+func (i ObjectIterator) getAccount() *Account          { return i.Container.Account() }
+func (i ObjectIterator) getContainerName() string      { return i.Container.Name() }
+func (i ObjectIterator) getPrefix() string             { return i.Prefix }
+func (i ObjectIterator) getHeaders() map[string]string { return i.Headers }
+func (i ObjectIterator) getOptions() *RequestOptions   { return i.Options }
+
 //iteratorBase provides shared behavior for ContainerIterator and ObjectIterator.
 type iteratorBase struct {
 	i      iteratorInterface

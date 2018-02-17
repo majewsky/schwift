@@ -23,10 +23,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"os"
 	"strings"
+	"text/template"
 )
 
 func main() {
