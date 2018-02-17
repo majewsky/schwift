@@ -102,16 +102,19 @@ func testWithContainer(t *testing.T, testCode func(c *Container)) {
 	testWithAccount(t, func(a *Account) {
 		containerName := getRandomName()
 		container, err := a.Container(containerName).EnsureExists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 
 		testCode(container)
 
 		//cleanup
 		exists, err := container.Exists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		if exists {
+			expectSuccess(t, container.Objects().Foreach(func(o *Object) error {
+				return o.Delete(nil, nil)
+			}))
 			err = container.Delete(nil, nil)
-			expectError(t, err, "")
+			expectSuccess(t, err)
 		}
 	})
 }

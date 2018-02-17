@@ -128,13 +128,6 @@ func TestObjectIterator(t *testing.T) {
 		ois, err = iter.CollectDetailed()
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, oname(1), oname(2), oname(3), oname(4))
-
-		//cleanup
-		iter = c.Objects()
-		iter.Prefix = "schwift-test-listing"
-		expectSuccess(t, iter.Foreach(func(o *Object) error {
-			return o.Delete(nil, nil)
-		}))
 	})
 }
 
