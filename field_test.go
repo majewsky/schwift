@@ -28,17 +28,17 @@ func TestFieldString(t *testing.T) {
 	hdr := make(AccountHeaders)
 	expectBool(t, hdr.TempURLKey().Exists(), false)
 	expectString(t, hdr.TempURLKey().Get(), "")
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Meta-Temp-Url-Key"] = ""
 	expectBool(t, hdr.TempURLKey().Exists(), false)
 	expectString(t, hdr.TempURLKey().Get(), "")
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Meta-Temp-Url-Key"] = "foo"
 	expectBool(t, hdr.TempURLKey().Exists(), true)
 	expectString(t, hdr.TempURLKey().Get(), "foo")
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr.TempURLKey().Set("bar")
 	expectHeaders(t, hdr, map[string]string{
@@ -61,7 +61,7 @@ func TestFieldString(t *testing.T) {
 func TestFieldTimestamp(t *testing.T) {
 	testWithAccount(t, func(a *Account) {
 		hdr, err := a.Headers()
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			return
 		}
 
@@ -75,7 +75,7 @@ func TestFieldTimestamp(t *testing.T) {
 	hdr := make(AccountHeaders)
 	expectBool(t, hdr.CreatedAt().Exists(), false)
 	expectBool(t, hdr.CreatedAt().Get().IsZero(), true)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Timestamp"] = "wtf"
 	expectBool(t, hdr.CreatedAt().Exists(), true)
@@ -105,7 +105,7 @@ func TestFieldHTTPTimestamp(t *testing.T) {
 	hdr := make(ObjectHeaders)
 	expectBool(t, hdr.UpdatedAt().Exists(), false)
 	expectBool(t, hdr.UpdatedAt().Get().IsZero(), true)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["Last-Modified"] = "wtf"
 	expectBool(t, hdr.UpdatedAt().Exists(), true)
@@ -119,12 +119,12 @@ func TestFieldUint64(t *testing.T) {
 	hdr := make(AccountHeaders)
 	expectBool(t, hdr.BytesUsedQuota().Exists(), false)
 	expectUint64(t, hdr.BytesUsedQuota().Get(), 0)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Meta-Quota-Bytes"] = "23"
 	expectBool(t, hdr.BytesUsedQuota().Exists(), true)
 	expectUint64(t, hdr.BytesUsedQuota().Get(), 23)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Meta-Quota-Bytes"] = "-23"
 	expectBool(t, hdr.BytesUsedQuota().Exists(), true)
@@ -151,12 +151,12 @@ func TestFieldUint64Readonly(t *testing.T) {
 	hdr := make(AccountHeaders)
 	expectBool(t, hdr.BytesUsed().Exists(), false)
 	expectUint64(t, hdr.BytesUsed().Get(), 0)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Bytes-Used"] = "23"
 	expectBool(t, hdr.BytesUsed().Exists(), true)
 	expectUint64(t, hdr.BytesUsed().Get(), 23)
-	expectError(t, hdr.Validate(), "")
+	expectSuccess(t, hdr.Validate())
 
 	hdr["X-Account-Bytes-Used"] = "-23"
 	expectBool(t, hdr.BytesUsed().Exists(), true)

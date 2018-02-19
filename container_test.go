@@ -34,7 +34,7 @@ func TestContainerLifecycle(t *testing.T) {
 		}
 
 		exists, err := c.Exists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectBool(t, exists, false)
 
 		_, err = c.Headers()
@@ -48,14 +48,14 @@ func TestContainerLifecycle(t *testing.T) {
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		err = c.Create(nil, nil)
-		expectError(t, err, "")
+		expectSuccess(t, err)
 
 		exists, err = c.Exists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectBool(t, exists, true)
 
 		err = c.Delete(nil, nil)
-		expectError(t, err, "")
+		expectSuccess(t, err)
 	})
 }
 
@@ -63,7 +63,7 @@ func TestContainerUpdate(t *testing.T) {
 	testWithContainer(t, func(c *Container) {
 
 		hdr, err := c.Headers()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectBool(t, hdr.ObjectCount().Exists(), true)
 		expectUint64(t, hdr.ObjectCount().Get(), 0)
 
@@ -72,10 +72,10 @@ func TestContainerUpdate(t *testing.T) {
 		hdr.BytesUsedQuota().Set(42)
 
 		err = c.Update(hdr, nil)
-		expectError(t, err, "")
+		expectSuccess(t, err)
 
 		hdr, err = c.Headers()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectUint64(t, hdr.BytesUsedQuota().Get(), 42)
 		expectUint64(t, hdr.ObjectCountQuota().Get(), 23)
 

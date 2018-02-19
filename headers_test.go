@@ -32,7 +32,7 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 		"X-Account-Meta-foo":         {"bar"},
 	}))
 
-	expectError(t, headers.Validate(), "")
+	expectSuccess(t, headers.Validate())
 	expectUint64(t, headers.BytesUsed().Get(), 1234)
 	expectUint64(t, headers.ContainerCount().Get(), 23)
 	expectUint64(t, headers.ObjectCount().Get(), 42)

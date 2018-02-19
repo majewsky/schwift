@@ -35,7 +35,7 @@ func TestObjectLifecycle(t *testing.T) {
 		}
 
 		exists, err := o.Exists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectBool(t, exists, false)
 
 		_, err = o.Headers()
@@ -49,13 +49,13 @@ func TestObjectLifecycle(t *testing.T) {
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
-		expectError(t, err, "")
+		expectSuccess(t, err)
 
 		exists, err = o.Exists()
-		expectError(t, err, "")
+		expectSuccess(t, err)
 		expectBool(t, exists, true)
 
 		err = o.Delete(nil, nil)
-		expectError(t, err, "")
+		expectSuccess(t, err)
 	})
 }

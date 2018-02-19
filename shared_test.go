@@ -177,20 +177,21 @@ func expectString(t *testing.T, actual string, expected string) {
 func expectError(t *testing.T, actual error, expected string) (ok bool) {
 	t.Helper()
 	if actual == nil {
-		if expected != "" {
-			t.Errorf("expected error %q, got no error\n", expected)
-			return false
-		}
-	} else {
-		if expected == "" {
-			t.Errorf("expected no error, got %q\n", actual.Error())
-			return false
-		} else if expected != actual.Error() {
-			t.Errorf("expected error %q, got %q instead\n", expected, actual.Error())
-			return false
-		}
+		t.Errorf("expected error %q, got no error\n", expected)
+		return false
 	}
+	if expected != actual.Error() {
+		t.Errorf("expected error %q, got %q instead\n", expected, actual.Error())
+		return false
+	}
+	return true
+}
 
+func expectSuccess(t *testing.T, actual error) (ok bool) {
+	if actual != nil {
+		t.Errorf("expected success, got error %q instead\n", actual.Error())
+		return false
+	}
 	return true
 }
 
@@ -218,8 +219,4 @@ func expectHeaders(t *testing.T, actual map[string]string, expected map[string]s
 			t.Errorf(`expected "%s: %s", got "%s: %s" instead`, k, ev, k, av)
 		}
 	}
-}
-
-func expectSuccess(t *testing.T, actual error) (ok bool) {
-	return expectError(t, actual, "")
 }

@@ -25,7 +25,7 @@ import (
 func TestAccountBasic(t *testing.T) {
 	testWithAccount(t, func(a *Account) {
 		hdr, err := a.Headers()
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 		//There are not a lot of things we can test here (besides testing that
@@ -43,12 +43,12 @@ func TestAccountMetadata(t *testing.T) {
 		hdr.Metadata().Set("schwift-test1", "first")
 		hdr.Metadata().Set("schwift-test2", "second")
 		err := a.Update(hdr, nil)
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
 		hdr, err = a.Headers()
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "first")
@@ -58,12 +58,12 @@ func TestAccountMetadata(t *testing.T) {
 		hdr = make(AccountHeaders)
 		hdr.Metadata().Clear("schwift-test1")
 		err = a.Update(hdr, nil)
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
 		hdr, err = a.Headers()
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "")
@@ -75,12 +75,12 @@ func TestAccountMetadata(t *testing.T) {
 		hdr.Metadata().Del("schwift-test1")
 		hdr.Metadata().Set("schwift-test2", "changed")
 		err = a.Update(hdr, nil)
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
 		hdr, err = a.Headers()
-		if !expectError(t, err, "") {
+		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "")
