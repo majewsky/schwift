@@ -20,19 +20,12 @@ package schwift
 
 import (
 	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"testing"
 )
 
 var objectExampleContent = []byte(`{"message":"Hello World!"}`)
 var objectExampleContentEtag = etagOf(objectExampleContent)
-
-func etagOf(buf []byte) string {
-	hash := md5.Sum(buf)
-	return hex.EncodeToString(hash[:])
-}
 
 func TestObjectIterator(t *testing.T) {
 	testWithContainer(t, func(c *Container) {

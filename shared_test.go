@@ -19,6 +19,7 @@
 package schwift
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"math"
@@ -121,6 +122,11 @@ func testWithContainer(t *testing.T, testCode func(c *Container)) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+func etagOf(buf []byte) string {
+	hash := md5.Sum(buf)
+	return hex.EncodeToString(hash[:])
+}
+
 func getRandomName() string {
 	var buf [16]byte
 	_, err := rand.Read(buf[:])
@@ -132,14 +138,14 @@ func getRandomName() string {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func expectBool(t *testing.T, actual bool, expected bool) {
+func expectBool(t *testing.T, actual, expected bool) {
 	t.Helper()
 	if actual != expected {
 		t.Errorf("expected value %#v, got %#v instead\n", expected, actual)
 	}
 }
 
-func expectFloat64(t *testing.T, actual float64, expected float64) {
+func expectFloat64(t *testing.T, actual, expected float64) {
 	t.Helper()
 	if math.Abs((actual-expected)/expected) > 1e-8 {
 		t.Errorf("expected value %g, got %g instead\n", expected, actual)
@@ -167,7 +173,7 @@ func expectUint64(t *testing.T, actual, expected uint64) {
 	}
 }
 
-func expectString(t *testing.T, actual string, expected string) {
+func expectString(t *testing.T, actual, expected string) {
 	t.Helper()
 	if actual != expected {
 		t.Errorf("expected value %q, got %q instead\n", expected, actual)
@@ -188,6 +194,7 @@ func expectError(t *testing.T, actual error, expected string) (ok bool) {
 }
 
 func expectSuccess(t *testing.T, actual error) (ok bool) {
+	t.Helper()
 	if actual != nil {
 		t.Errorf("expected success, got error %q instead\n", actual.Error())
 		return false

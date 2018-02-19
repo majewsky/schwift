@@ -70,6 +70,8 @@ type ObjectIterator struct {
 	//Options may contain additional query parameters for the GET request.
 	Options *RequestOptions
 
+	//TODO: Delimter field (and check if other stuff is missing)
+
 	base *iteratorBase
 }
 
