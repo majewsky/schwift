@@ -262,5 +262,35 @@ func (o *Object) Invalidate() {
 	o.headers = nil
 }
 
-//TODO Object.Copy(), Object.Move(), Object.Download()
+//Download retrieves the object's contents using a GET request. This returns a
+//helper object which allows you to select whether you want an io.ReadCloser
+//for reading the object contents progressively, or whether you want the object
+//contents collected into a byte slice or string.
+//
+//	reader, err := object.Download(nil, nil).AsReadCloser()
+//
+//	buf, err := object.Download(nil, nil).AsByteSlice()
+//
+//	str, err := object.Download(nil, nil).AsString()
+//
+func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) DownloadedObject {
+	resp, err := Request{
+		Method:            "GET",
+		ContainerName:     o.c.name,
+		ObjectName:        o.name,
+		Headers:           headersToHTTP(headers),
+		Options:           opts,
+		ExpectStatusCodes: []int{200},
+	}.Do(o.c.a.client)
+	if err == nil {
+		headers := ObjectHeaders(headersFromHTTP(resp.Header))
+		err = headers.Validate()
+		if err == nil {
+			o.headers = &headers
+		}
+	}
+	return DownloadedObject{resp.Body, err}
+}
+
+//TODO Object.Copy(), Object.Move()
 //TODO provide a companion to Object.Upload() to connect it with content-generating functions where an io.Writer needs to be given
