@@ -37,7 +37,7 @@ Or, if you use Swift's built-in authentication instead of Keystone:
 		Key:  "password",
 	})
 
-Then, in both cases, you use schwift.AccountFromClient() to obtain a
+Then, in both cases, you use schwift.AccountFromGophercloud() to obtain a
 schwift.Account instance, from which point you have access to all of schwift's
 API.
 

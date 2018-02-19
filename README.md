@@ -29,7 +29,7 @@ authOptions, err := openstack.AuthOptionsFromEnv()
 provider, err := openstack.AuthenticatedClient(authOptions)
 client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
 
-account, err := schwift.AccountFromClient(client)
+account, err := schwift.AccountFromGophercloud(client)
 ```
 
 To connect to Swift using Swift's built-in authentication:
@@ -47,7 +47,7 @@ client, err := swauth.NewObjectStorageV1(provider, swauth.AuthOpts {
     Key:  "password",
 })
 
-account, err := schwift.AccountFromClient(client)
+account, err := schwift.AccountFromGophercloud(client)
 ```
 
 From this point, follow the [API documentation](https://godoc.org/github.com/majewsky/schwift) for what you can do with

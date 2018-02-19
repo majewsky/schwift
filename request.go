@@ -24,8 +24,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/gophercloud/gophercloud"
 )
 
 //RequestOptions contains additional headers and values for a request.
@@ -62,8 +60,8 @@ type Request struct {
 }
 
 //URL returns the full URL for this request.
-func (r Request) URL(client *gophercloud.ServiceClient, values url.Values) (string, error) {
-	uri, err := url.Parse(client.Endpoint)
+func (r Request) URL(client Client, values url.Values) (string, error) {
+	uri, err := url.Parse(client.EndpointURL())
 	if err != nil {
 		return "", err
 	}
@@ -86,14 +84,8 @@ func (r Request) URL(client *gophercloud.ServiceClient, values url.Values) (stri
 	return uri.String(), nil
 }
 
-//Do executes this request on the given service client.
-func (r Request) Do(client *gophercloud.ServiceClient) (*http.Response, error) {
-	return r.do(client, false)
-}
-
-func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.Response, error) {
-	provider := client.ProviderClient
-
+//Do executes this request on the given Client.
+func (r Request) Do(client Client) (*http.Response, error) {
 	//build URL
 	var values url.Values
 	if r.Options != nil {
@@ -113,15 +105,11 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 	for k, v := range r.Headers {
 		req.Header[k] = v
 	}
-	req.Header.Set("User-Agent", provider.UserAgent.Join())
-	for key, value := range provider.AuthenticatedHeaders() {
-		req.Header.Set(key, value)
-	}
 	if r.Body != nil {
 		req.Header.Set("Expect", "100-continue")
 	}
 
-	resp, err := provider.HTTPClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -141,21 +129,7 @@ func (r Request) do(client *gophercloud.ServiceClient, afterReauth bool) (*http.
 		}
 	}
 
-	//detect expired token
-	if resp.StatusCode == http.StatusUnauthorized && !afterReauth {
-		err := drainResponseBody(resp)
-		if err != nil {
-			return nil, err
-		}
-		err = provider.Reauthenticate(resp.Request.Header.Get("X-Auth-Token"))
-		if err != nil {
-			return nil, err
-		}
-		//restart request with new token
-		return r.do(client, true)
-	}
-
-	//other unexpected status code -> generate UnexpectedStatusCodeError
+	//unexpected status code -> generate error
 	buf, err := collectResponseBody(resp)
 	if err != nil {
 		return nil, err

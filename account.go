@@ -27,7 +27,7 @@ import (
 
 //Account represents a Swift account.
 type Account struct {
-	client *gophercloud.ServiceClient
+	client Client
 	//URL parts
 	baseURL string
 	name    string
@@ -37,19 +37,26 @@ type Account struct {
 
 var endpointURLRegexp = regexp.MustCompile(`^(.*/)v1/(.*)/$`)
 
-//AccountFromClient takes a gophercloud.ServiceClient which wraps a Swift
-//endpoint, and returns the Account instance corresponding to the account or
-//project that this client is connected to.
-func AccountFromClient(client *gophercloud.ServiceClient) (*Account, error) {
-	match := endpointURLRegexp.FindStringSubmatch(client.Endpoint)
+//AccountFromClient takes something that implements the Client interface, and
+//returns the Account instance corresponding to the account/project that this
+//client is connected to.
+func AccountFromClient(client Client) (*Account, error) {
+	match := endpointURLRegexp.FindStringSubmatch(client.EndpointURL())
 	if match == nil {
-		return nil, fmt.Errorf(`schwift.AccountFromClient(): invalid Swift endpoint URL: cannot find "/v1/" in %q`, client.Endpoint)
+		return nil, fmt.Errorf(`schwift.AccountFromClient(): invalid Swift endpoint URL: cannot find "/v1/" in %q`, client.EndpointURL())
 	}
 	return &Account{
 		client:  client,
 		baseURL: match[1],
 		name:    match[2],
 	}, nil
+}
+
+//AccountFromGophercloud takes a gophercloud.ServiceClient which wraps a Swift
+//endpoint, and returns the Account instance corresponding to the account or
+//project that this client is connected to.
+func AccountFromGophercloud(client *gophercloud.ServiceClient) (*Account, error) {
+	return AccountFromClient(&gophercloudClient{client})
 }
 
 //SwitchAccount returns a handle on a different account on the same server. Note
@@ -60,10 +67,9 @@ func AccountFromClient(client *gophercloud.ServiceClient) (*Account, error) {
 //The account name is usually the project name with an additional "AUTH_"
 //prefix.
 func (a *Account) SwitchAccount(accountName string) *Account {
-	clonedClient := *a.client
-	clonedClient.Endpoint = a.baseURL + "v1/" + accountName + "/"
+	newEndpointURL := a.baseURL + "v1/" + accountName + "/"
 	return &Account{
-		client:  &clonedClient,
+		client:  a.client.Clone(newEndpointURL),
 		baseURL: a.baseURL,
 		name:    accountName,
 	}
@@ -75,9 +81,9 @@ func (a *Account) Name() string {
 	return a.name
 }
 
-//Client returns the gophercloud.ServiceClient which is used to make requests
-//against this account.
-func (a *Account) Client() *gophercloud.ServiceClient {
+//Client returns the Client which is used to make requests against this
+//account.
+func (a *Account) Client() Client {
 	return a.client
 }
 

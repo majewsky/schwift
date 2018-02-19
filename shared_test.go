@@ -23,8 +23,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math"
-	"net/http"
-	"net/url"
 	"os"
 	"testing"
 
@@ -32,26 +30,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
 )
-
-//This function can be used during debugging to redirect the HTTP requests for
-//a specific unit test through a mitmproxy. Put this at the beginning of your
-//testcase like so:
-//
-//	testWithAccount(t, func(a *Account) {
-//	    withProxy(a, "http://localhost:8888", func() {
-//	        ...
-//
-//	testWithContainer(t, func(c *Container) {
-//	    withProxy(c.Account(), "http://localhost:8888", func() {
-//	        ...
-func withProxy(a *Account, proxyURL string, action func()) {
-	t := http.DefaultTransport.(*http.Transport)
-	proxyOrig := t.Proxy
-	t.Proxy = func(*http.Request) (*url.URL, error) { return url.Parse(proxyURL) }
-	a.client.ProviderClient.HTTPClient.Transport = t
-	action()
-	t.Proxy = proxyOrig
-}
 
 func testWithAccount(t *testing.T, testCode func(a *Account)) {
 	stAuth := os.Getenv("ST_AUTH")
@@ -91,9 +69,9 @@ func testWithAccount(t *testing.T, testCode func(a *Account)) {
 		}
 	}
 
-	account, err := AccountFromClient(client)
+	account, err := AccountFromGophercloud(client)
 	if err != nil {
-		t.Errorf("schwift.AccountFromClient returned: " + err.Error())
+		t.Errorf("schwift.AccountFromGophercloud returned: " + err.Error())
 		return
 	}
 	testCode(account)
