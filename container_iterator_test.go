@@ -81,6 +81,7 @@ func TestContainerIterator(t *testing.T) {
 		expectContainerInfos(t, cis)
 
 		//test Foreach
+		a.Invalidate()
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
@@ -91,7 +92,12 @@ func TestContainerIterator(t *testing.T) {
 		}))
 		expectInt(t, idx, 4)
 
+		if a.headers == nil {
+			t.Error("ContainerIterator.Foreach did not initialize Account.Headers")
+		}
+
 		//test ForeachDetailed
+		a.Invalidate()
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
@@ -101,6 +107,10 @@ func TestContainerIterator(t *testing.T) {
 			return nil
 		}))
 		expectInt(t, idx, 4)
+
+		if a.headers == nil {
+			t.Error("ContainerIterator.ForeachDetailed did not initialize Account.Headers")
+		}
 
 		//test Collect
 		iter = a.Containers()

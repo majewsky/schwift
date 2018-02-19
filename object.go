@@ -263,4 +263,4 @@ func (o *Object) Invalidate() {
 }
 
 //TODO Object.Copy(), Object.Move(), Object.Download()
-//TODO does Object.Upload() have the right API?
+//TODO provide a companion to Object.Upload() to connect it with content-generating functions where an io.Writer needs to be given

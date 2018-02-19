@@ -20,6 +20,7 @@ package schwift
 
 import (
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -32,6 +33,9 @@ type iteratorInterface interface {
 	getPrefix() string
 	getHeaders() map[string]string
 	getOptions() *RequestOptions
+	//putHeader initializes the AccountHeaders/ContainerHeaders field of the
+	//Account/Container using the response headers from the GET request.
+	putHeader(http.Header) error
 }
 
 func (i ContainerIterator) getAccount() *Account          { return i.Account }
@@ -40,11 +44,29 @@ func (i ContainerIterator) getPrefix() string             { return i.Prefix }
 func (i ContainerIterator) getHeaders() map[string]string { return i.Headers }
 func (i ContainerIterator) getOptions() *RequestOptions   { return i.Options }
 
+func (i ContainerIterator) putHeader(hdr http.Header) error {
+	headers := AccountHeaders(headersFromHTTP(hdr))
+	if err := headers.Validate(); err != nil {
+		return err
+	}
+	i.Account.headers = &headers
+	return nil
+}
+
 func (i ObjectIterator) getAccount() *Account          { return i.Container.Account() }
 func (i ObjectIterator) getContainerName() string      { return i.Container.Name() }
 func (i ObjectIterator) getPrefix() string             { return i.Prefix }
 func (i ObjectIterator) getHeaders() map[string]string { return i.Headers }
 func (i ObjectIterator) getOptions() *RequestOptions   { return i.Options }
+
+func (i ObjectIterator) putHeader(hdr http.Header) error {
+	headers := ContainerHeaders(headersFromHTTP(hdr))
+	if err := headers.Validate(); err != nil {
+		return err
+	}
+	i.Container.headers = &headers
+	return nil
+}
 
 //iteratorBase provides shared behavior for ContainerIterator and ObjectIterator.
 type iteratorBase struct {
@@ -116,7 +138,7 @@ func (b *iteratorBase) nextPage(limit int) ([]string, error) {
 		b.eof = false
 		b.marker = result[len(result)-1]
 	}
-	return result, nil
+	return result, b.i.putHeader(resp.Header)
 }
 
 func (b *iteratorBase) nextPageDetailed(limit int, data interface{}) error {
@@ -132,6 +154,9 @@ func (b *iteratorBase) nextPageDetailed(limit int, data interface{}) error {
 	closeErr := resp.Body.Close()
 	if err == nil {
 		err = closeErr
+	}
+	if err == nil {
+		err = b.i.putHeader(resp.Header)
 	}
 	return err
 }

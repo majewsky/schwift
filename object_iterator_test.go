@@ -94,6 +94,7 @@ func TestObjectIterator(t *testing.T) {
 		expectObjectInfos(t, ois)
 
 		//test Foreach
+		c.Invalidate()
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
@@ -104,7 +105,12 @@ func TestObjectIterator(t *testing.T) {
 		}))
 		expectInt(t, idx, 4)
 
+		if c.headers == nil {
+			t.Error("ObjectIterator.Foreach did not initialize Container.Headers")
+		}
+
 		//test ForeachDetailed
+		c.Invalidate()
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
@@ -114,6 +120,10 @@ func TestObjectIterator(t *testing.T) {
 			return nil
 		}))
 		expectInt(t, idx, 4)
+
+		if c.headers == nil {
+			t.Error("ObjectIterator.ForeachDetailed did not initialize Container.Headers")
+		}
 
 		//test Collect
 		iter = c.Objects()
