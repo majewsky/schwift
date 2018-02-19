@@ -76,7 +76,7 @@ func (c *Container) Headers() (ContainerHeaders, error) {
 		Method:            "HEAD",
 		ContainerName:     c.name,
 		ExpectStatusCodes: []int{204},
-	}.Do(c.a.client)
+	}.Do(c.a.backend)
 	if err != nil {
 		return ContainerHeaders{}, err
 	}
@@ -103,7 +103,7 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
-	}.Do(c.a.client)
+	}.Do(c.a.backend)
 	if err == nil {
 		c.Invalidate()
 	}
@@ -124,7 +124,7 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,
-	}.Do(c.a.client)
+	}.Do(c.a.backend)
 	if err == nil {
 		c.Invalidate()
 	}
@@ -146,7 +146,7 @@ func (c *Container) Delete(headers ContainerHeaders, opts *RequestOptions) error
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
-	}.Do(c.a.client)
+	}.Do(c.a.backend)
 	if err == nil {
 		c.Invalidate()
 	}
@@ -172,7 +172,7 @@ func (c *Container) EnsureExists() (*Container, error) {
 		ContainerName:     c.name,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,
-	}.Do(c.a.client)
+	}.Do(c.a.backend)
 	return c, err
 }
 

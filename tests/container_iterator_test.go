@@ -16,15 +16,17 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 func TestContainerIterator(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
+	testWithAccount(t, func(a *schwift.Account) {
 		cname := func(idx int) string {
 			return fmt.Sprintf("schwift-test-listing%d", idx)
 		}
@@ -85,32 +87,26 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
-		expectSuccess(t, iter.Foreach(func(c *Container) error {
+		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
 			idx++
 			expectString(t, c.Name(), cname(idx))
 			return nil
 		}))
 		expectInt(t, idx, 4)
-
-		if a.headers == nil {
-			t.Error("ContainerIterator.Foreach did not initialize Account.Headers")
-		}
+		expectAccountHeadersCached(t, a)
 
 		//test ForeachDetailed
 		a.Invalidate()
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
-		expectSuccess(t, iter.ForeachDetailed(func(info ContainerInfo) error {
+		expectSuccess(t, iter.ForeachDetailed(func(info schwift.ContainerInfo) error {
 			idx++
 			expectString(t, info.Container.Name(), cname(idx))
 			return nil
 		}))
 		expectInt(t, idx, 4)
-
-		if a.headers == nil {
-			t.Error("ContainerIterator.ForeachDetailed did not initialize Account.Headers")
-		}
+		expectAccountHeadersCached(t, a)
 
 		//test Collect
 		iter = a.Containers()
@@ -129,13 +125,25 @@ func TestContainerIterator(t *testing.T) {
 		//cleanup
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		expectSuccess(t, iter.Foreach(func(c *Container) error {
+		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
 			return c.Delete(nil, nil)
 		}))
 	})
 }
 
-func expectContainerNames(t *testing.T, actualContainers []*Container, expectedNames ...string) {
+func expectAccountHeadersCached(t *testing.T, a *schwift.Account) {
+	requestCountBefore := a.Backend().(*RequestCountingBackend).Count
+	_, err := a.Headers()
+	expectSuccess(t, err)
+	requestCountAfter := a.Backend().(*RequestCountingBackend).Count
+
+	t.Helper()
+	if requestCountBefore != requestCountAfter {
+		t.Error("Account.Headers was expected to use cache, but issued HEAD request")
+	}
+}
+
+func expectContainerNames(t *testing.T, actualContainers []*schwift.Container, expectedNames ...string) {
 	t.Helper()
 	if len(actualContainers) != len(expectedNames) {
 		t.Errorf("expected %d containers, got %d containers",
@@ -150,7 +158,7 @@ func expectContainerNames(t *testing.T, actualContainers []*Container, expectedN
 	}
 }
 
-func expectContainerInfos(t *testing.T, actualInfos []ContainerInfo, expectedNames ...string) {
+func expectContainerInfos(t *testing.T, actualInfos []schwift.ContainerInfo, expectedNames ...string) {
 	t.Helper()
 	if len(actualInfos) != len(expectedNames) {
 		t.Errorf("expected %d containers, got %d containers",

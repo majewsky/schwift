@@ -21,6 +21,8 @@
 Package schwift is a client library for OpenStack Swift
 (https://github.com/openstack/swift, https://openstack.org).
 
+TODO update doc for changed auth workflow
+
 It uses Gophercloud (https://github.com/gophercloud/gophercloud) for
 authentication, so you usually start by obtaining a gophercloud.ServiceClient
 for Swift like so:
@@ -37,9 +39,9 @@ Or, if you use Swift's built-in authentication instead of Keystone:
 		Key:  "password",
 	})
 
-Then, in both cases, you use schwift.AccountFromGophercloud() to obtain a
-schwift.Account instance, from which point you have access to all of schwift's
-API.
+Then, in both cases, you use Wrap() from the subpackage gopherschwift to obtain
+a schwift.Account instance, from which point you have access to all of
+schwift's API.
 
 Caching
 

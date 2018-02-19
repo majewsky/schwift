@@ -21,13 +21,11 @@ package schwift
 import (
 	"fmt"
 	"regexp"
-
-	"github.com/gophercloud/gophercloud"
 )
 
 //Account represents a Swift account.
 type Account struct {
-	client Client
+	backend Backend
 	//URL parts
 	baseURL string
 	name    string
@@ -37,26 +35,19 @@ type Account struct {
 
 var endpointURLRegexp = regexp.MustCompile(`^(.*/)v1/(.*)/$`)
 
-//AccountFromClient takes something that implements the Client interface, and
+//InitializeAccount takes something that implements the Backend interface, and
 //returns the Account instance corresponding to the account/project that this
-//client is connected to.
-func AccountFromClient(client Client) (*Account, error) {
-	match := endpointURLRegexp.FindStringSubmatch(client.EndpointURL())
+//backend is connected to.
+func InitializeAccount(backend Backend) (*Account, error) {
+	match := endpointURLRegexp.FindStringSubmatch(backend.EndpointURL())
 	if match == nil {
-		return nil, fmt.Errorf(`schwift.AccountFromClient(): invalid Swift endpoint URL: cannot find "/v1/" in %q`, client.EndpointURL())
+		return nil, fmt.Errorf(`schwift.AccountFromClient(): invalid Swift endpoint URL: cannot find "/v1/" in %q`, backend.EndpointURL())
 	}
 	return &Account{
-		client:  client,
+		backend: backend,
 		baseURL: match[1],
 		name:    match[2],
 	}, nil
-}
-
-//AccountFromGophercloud takes a gophercloud.ServiceClient which wraps a Swift
-//endpoint, and returns the Account instance corresponding to the account or
-//project that this client is connected to.
-func AccountFromGophercloud(client *gophercloud.ServiceClient) (*Account, error) {
-	return AccountFromClient(&gophercloudClient{client})
 }
 
 //SwitchAccount returns a handle on a different account on the same server. Note
@@ -69,7 +60,7 @@ func AccountFromGophercloud(client *gophercloud.ServiceClient) (*Account, error)
 func (a *Account) SwitchAccount(accountName string) *Account {
 	newEndpointURL := a.baseURL + "v1/" + accountName + "/"
 	return &Account{
-		client:  a.client.Clone(newEndpointURL),
+		backend: a.backend.Clone(newEndpointURL),
 		baseURL: a.baseURL,
 		name:    accountName,
 	}
@@ -81,10 +72,10 @@ func (a *Account) Name() string {
 	return a.name
 }
 
-//Client returns the Client which is used to make requests against this
+//Backend returns the backend which is used to make requests against this
 //account.
-func (a *Account) Client() Client {
-	return a.client
+func (a *Account) Backend() Backend {
+	return a.backend
 }
 
 //Headers returns the AccountHeaders for this account. If the AccountHeaders
@@ -99,7 +90,7 @@ func (a *Account) Headers() (AccountHeaders, error) {
 	resp, err := Request{
 		Method:            "HEAD",
 		ExpectStatusCodes: []int{204},
-	}.Do(a.client)
+	}.Do(a.backend)
 	if err != nil {
 		return AccountHeaders{}, err
 	}
@@ -129,7 +120,7 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
-	}.Do(a.client)
+	}.Do(a.backend)
 	if err == nil {
 		a.Invalidate()
 	}
@@ -150,7 +141,7 @@ func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,
-	}.Do(a.client)
+	}.Do(a.backend)
 	if err == nil {
 		a.Invalidate()
 	}

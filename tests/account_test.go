@@ -16,14 +16,16 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 func TestAccountBasic(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
+	testWithAccount(t, func(a *schwift.Account) {
 		hdr, err := a.Headers()
 		if !expectSuccess(t, err) {
 			t.FailNow()
@@ -37,9 +39,9 @@ func TestAccountBasic(t *testing.T) {
 }
 
 func TestAccountMetadata(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
+	testWithAccount(t, func(a *schwift.Account) {
 		//test creating some metadata
-		hdr := make(AccountHeaders)
+		hdr := make(schwift.AccountHeaders)
 		hdr.Metadata().Set("schwift-test1", "first")
 		hdr.Metadata().Set("schwift-test2", "second")
 		err := a.Update(hdr, nil)
@@ -55,7 +57,7 @@ func TestAccountMetadata(t *testing.T) {
 		expectString(t, hdr.Metadata().Get("schwift-test2"), "second")
 
 		//test deleting some metadata
-		hdr = make(AccountHeaders)
+		hdr = make(schwift.AccountHeaders)
 		hdr.Metadata().Clear("schwift-test1")
 		err = a.Update(hdr, nil)
 		if !expectSuccess(t, err) {
@@ -70,7 +72,7 @@ func TestAccountMetadata(t *testing.T) {
 		expectString(t, hdr.Metadata().Get("schwift-test2"), "second")
 
 		//test updating some metadata
-		hdr = make(AccountHeaders)
+		hdr = make(schwift.AccountHeaders)
 		hdr.Metadata().Set("schwift-test1", "will not be set")
 		hdr.Metadata().Del("schwift-test1")
 		hdr.Metadata().Set("schwift-test2", "changed")

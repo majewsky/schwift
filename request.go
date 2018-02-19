@@ -60,8 +60,8 @@ type Request struct {
 }
 
 //URL returns the full URL for this request.
-func (r Request) URL(client Client, values url.Values) (string, error) {
-	uri, err := url.Parse(client.EndpointURL())
+func (r Request) URL(backend Backend, values url.Values) (string, error) {
+	uri, err := url.Parse(backend.EndpointURL())
 	if err != nil {
 		return "", err
 	}
@@ -84,14 +84,14 @@ func (r Request) URL(client Client, values url.Values) (string, error) {
 	return uri.String(), nil
 }
 
-//Do executes this request on the given Client.
-func (r Request) Do(client Client) (*http.Response, error) {
+//Do executes this request on the given Backend.
+func (r Request) Do(backend Backend) (*http.Response, error) {
 	//build URL
 	var values url.Values
 	if r.Options != nil {
 		values = r.Options.Values
 	}
-	uri, err := r.URL(client, values)
+	uri, err := r.URL(backend, values)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (r Request) Do(client Client) (*http.Response, error) {
 		req.Header.Set("Expect", "100-continue")
 	}
 
-	resp, err := client.Do(req)
+	resp, err := backend.Do(req)
 	if err != nil {
 		return nil, err
 	}

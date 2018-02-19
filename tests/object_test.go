@@ -16,7 +16,7 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"bytes"
@@ -24,10 +24,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 func TestObjectLifecycle(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 		objectName := getRandomName()
 		o := c.Object(objectName)
 
@@ -43,8 +45,8 @@ func TestObjectLifecycle(t *testing.T) {
 
 		_, err = o.Headers()
 		expectError(t, err, "expected 200 response, got 404 instead")
-		expectBool(t, Is(err, http.StatusNotFound), true)
-		expectBool(t, Is(err, http.StatusNoContent), false)
+		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
+		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
@@ -64,8 +66,8 @@ func TestObjectLifecycle(t *testing.T) {
 }
 
 func TestObjectUpload(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
-		validateUploadedFile := func(obj *Object, expected []byte) {
+	testWithContainer(t, func(c *schwift.Container) {
+		validateUploadedFile := func(obj *schwift.Object, expected []byte) {
 			str, err := obj.Download(nil, nil).AsString()
 			expectSuccess(t, err)
 			expectString(t, str, string(expected))
@@ -131,7 +133,7 @@ func (r opaqueReader) Read(buf []byte) (int, error) {
 }
 
 func TestObjectDownload(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 		//upload example object
 		obj := c.Object("example")
 		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
@@ -164,14 +166,14 @@ func TestObjectDownload(t *testing.T) {
 }
 
 func TestObjectUpdate(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 		obj := c.Object("example")
 
 		//test that metadata update fails for non-existing object
-		newHeaders := make(ObjectHeaders)
+		newHeaders := make(schwift.ObjectHeaders)
 		newHeaders.ContentType().Set("application/json")
 		err := obj.Update(newHeaders, nil)
-		expectBool(t, Is(err, http.StatusNotFound), true)
+		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectError(t, err, "expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		//create object

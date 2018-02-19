@@ -98,7 +98,7 @@ func (o *Object) Headers() (ObjectHeaders, error) {
 		//since Openstack LOVES to be inconsistent with everything (incl. itself),
 		//this returns 200 instead of 204
 		ExpectStatusCodes: []int{200},
-	}.Do(o.c.a.client)
+	}.Do(o.c.a.backend)
 	if err != nil {
 		return ObjectHeaders{}, err
 	}
@@ -126,7 +126,7 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{202},
-	}.Do(o.c.a.client)
+	}.Do(o.c.a.backend)
 	if err == nil {
 		o.Invalidate()
 	}
@@ -189,7 +189,7 @@ func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestO
 		Body:              content,
 		ExpectStatusCodes: []int{201},
 		DrainResponseBody: true,
-	}.Do(o.c.a.client)
+	}.Do(o.c.a.backend)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (o *Object) Delete(headers ObjectHeaders, opts *RequestOptions) error {
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
-	}.Do(o.c.a.client)
+	}.Do(o.c.a.backend)
 	if err == nil {
 		o.c.Invalidate()
 	}
@@ -316,7 +316,7 @@ func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) Downloade
 		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{200},
-	}.Do(o.c.a.client)
+	}.Do(o.c.a.backend)
 	if err == nil {
 		headers := ObjectHeaders(headersFromHTTP(resp.Header))
 		err = headers.Validate()

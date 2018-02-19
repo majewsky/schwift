@@ -14,7 +14,7 @@ You can get this with `go get github.com/majewsky/schwift`. When using this in a
 
 ## Usage
 
-This library uses [Gophercloud](https://github.com/gophercloud/gophercloud) to handle authentication, so to use Schwift, you have to first build a `gophercloud.ServiceClient` and then pass that to `schwift.Account()` to get a handle on the Swift account.
+This library uses [Gophercloud](https://github.com/gophercloud/gophercloud) to handle authentication, so to use Schwift, you have to first build a `gophercloud.ServiceClient` and then pass that to `gopherschwift.Wrap()` to get a handle on the Swift account.
 
 For example, to connect to Swift using OpenStack Keystone authentication:
 
@@ -22,14 +22,14 @@ For example, to connect to Swift using OpenStack Keystone authentication:
 import (
   "github.com/gophercloud/gophercloud"
   "github.com/gophercloud/gophercloud/openstack"
-  "github.com/majewsky/schwift"
+  "github.com/majewsky/schwift/gopherschwift"
 )
 
 authOptions, err := openstack.AuthOptionsFromEnv()
 provider, err := openstack.AuthenticatedClient(authOptions)
 client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
 
-account, err := schwift.AccountFromGophercloud(client)
+account, err := gopherschwift.Wrap(client)
 ```
 
 To connect to Swift using Swift's built-in authentication:
@@ -38,7 +38,7 @@ To connect to Swift using Swift's built-in authentication:
 import (
   "github.com/gophercloud/gophercloud/openstack"
   "github.com/gophercloud/gophercloud/openstack/objectstore/v1/swauth"
-  "github.com/majewsky/schwift"
+  "github.com/majewsky/schwift/gopherschwift"
 )
 
 provider, err := openstack.NewClient("http://swift.example.com:8080")
@@ -47,7 +47,7 @@ client, err := swauth.NewObjectStorageV1(provider, swauth.AuthOpts {
     Key:  "password",
 })
 
-account, err := schwift.AccountFromGophercloud(client)
+account, err := gopherschwift.Wrap(client)
 ```
 
 From this point, follow the [API documentation](https://godoc.org/github.com/majewsky/schwift) for what you can do with
@@ -77,7 +77,7 @@ Schwift improves on ncw/swift by:
 ### What about Gophercloud?
 
 Schwift uses Gophercloud for authentication. That solves one problem that ncw/swift has, namely that you cannot
-use the Keystone token that ncw/swift fetches for talking to other OpenStack services
+use the Keystone token that ncw/swift fetches for talking to other OpenStack services.
 
 But besides the auth code, Schwift avoids all other parts of Gophercloud. Gophercloud, like many other OpenStack client
 libraries, is modeled frankly around the "JSON-in, JSON-out" request-response-based design that all OpenStack APIs

@@ -16,7 +16,7 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"crypto/md5"
@@ -29,9 +29,11 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
+	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/gopherschwift"
 )
 
-func testWithAccount(t *testing.T, testCode func(a *Account)) {
+func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 	stAuth := os.Getenv("ST_AUTH")
 	stUser := os.Getenv("ST_USER")
 	stKey := os.Getenv("ST_KEY")
@@ -69,16 +71,23 @@ func testWithAccount(t *testing.T, testCode func(a *Account)) {
 		}
 	}
 
-	account, err := AccountFromGophercloud(client)
+	account, err := gopherschwift.Wrap(client)
 	if err != nil {
-		t.Errorf("schwift.AccountFromGophercloud returned: " + err.Error())
+		t.Error(err.Error())
+		return
+	}
+	account, err = schwift.InitializeAccount(
+		&RequestCountingBackend{Inner: account.Backend()},
+	)
+	if err != nil {
+		t.Error(err.Error())
 		return
 	}
 	testCode(account)
 }
 
-func testWithContainer(t *testing.T, testCode func(c *Container)) {
-	testWithAccount(t, func(a *Account) {
+func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
+	testWithAccount(t, func(a *schwift.Account) {
 		containerName := getRandomName()
 		container, err := a.Container(containerName).EnsureExists()
 		expectSuccess(t, err)
@@ -89,7 +98,7 @@ func testWithContainer(t *testing.T, testCode func(c *Container)) {
 		exists, err := container.Exists()
 		expectSuccess(t, err)
 		if exists {
-			expectSuccess(t, container.Objects().Foreach(func(o *Object) error {
+			expectSuccess(t, container.Objects().Foreach(func(o *schwift.Object) error {
 				return o.Delete(nil, nil)
 			}))
 			err = container.Delete(nil, nil)

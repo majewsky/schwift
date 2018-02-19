@@ -116,7 +116,7 @@ func (b *iteratorBase) nextPage(limit int) ([]string, error) {
 	if b.eof {
 		return nil, nil
 	}
-	resp, err := b.request(limit, false).Do(b.i.getAccount().client)
+	resp, err := b.request(limit, false).Do(b.i.getAccount().backend)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (b *iteratorBase) nextPageDetailed(limit int, data interface{}) error {
 	if b.eof {
 		return nil
 	}
-	resp, err := b.request(limit, true).Do(b.i.getAccount().client)
+	resp, err := b.request(limit, true).Do(b.i.getAccount().backend)
 	if err != nil {
 		return err
 	}

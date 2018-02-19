@@ -16,15 +16,17 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"net/http"
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 func TestContainerLifecycle(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
+	testWithAccount(t, func(a *schwift.Account) {
 		containerName := getRandomName()
 		c := a.Container(containerName)
 
@@ -39,8 +41,8 @@ func TestContainerLifecycle(t *testing.T) {
 
 		_, err = c.Headers()
 		expectError(t, err, "expected 204 response, got 404 instead")
-		expectBool(t, Is(err, http.StatusNotFound), true)
-		expectBool(t, Is(err, http.StatusNoContent), false)
+		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
+		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
@@ -60,14 +62,14 @@ func TestContainerLifecycle(t *testing.T) {
 }
 
 func TestContainerUpdate(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 
 		hdr, err := c.Headers()
 		expectSuccess(t, err)
 		expectBool(t, hdr.ObjectCount().Exists(), true)
 		expectUint64(t, hdr.ObjectCount().Get(), 0)
 
-		hdr = make(ContainerHeaders)
+		hdr = make(schwift.ContainerHeaders)
 		hdr.ObjectCountQuota().Set(23)
 		hdr.BytesUsedQuota().Set(42)
 

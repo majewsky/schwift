@@ -16,26 +16,28 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"bytes"
 	"fmt"
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 var objectExampleContent = []byte(`{"message":"Hello World!"}`)
 var objectExampleContentEtag = etagOf(objectExampleContent)
 
 func TestObjectIterator(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 		oname := func(idx int) string {
 			return fmt.Sprintf("schwift-test-listing%d", idx)
 		}
 
 		//create test objects that can be listed
 		for idx := 1; idx <= 4; idx++ {
-			hdr := make(ObjectHeaders)
+			hdr := make(schwift.ObjectHeaders)
 			hdr.ContentType().Set("application/json")
 			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), hdr, nil)
 			expectSuccess(t, err)
@@ -91,32 +93,26 @@ func TestObjectIterator(t *testing.T) {
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
-		expectSuccess(t, iter.Foreach(func(o *Object) error {
+		expectSuccess(t, iter.Foreach(func(o *schwift.Object) error {
 			idx++
 			expectString(t, o.Name(), oname(idx))
 			return nil
 		}))
 		expectInt(t, idx, 4)
-
-		if c.headers == nil {
-			t.Error("ObjectIterator.Foreach did not initialize Container.Headers")
-		}
+		expectContainerHeadersCached(t, c)
 
 		//test ForeachDetailed
 		c.Invalidate()
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
-		expectSuccess(t, iter.ForeachDetailed(func(info ObjectInfo) error {
+		expectSuccess(t, iter.ForeachDetailed(func(info schwift.ObjectInfo) error {
 			idx++
 			expectString(t, info.Object.Name(), oname(idx))
 			return nil
 		}))
 		expectInt(t, idx, 4)
-
-		if c.headers == nil {
-			t.Error("ObjectIterator.ForeachDetailed did not initialize Container.Headers")
-		}
+		expectContainerHeadersCached(t, c)
 
 		//test Collect
 		iter = c.Objects()
@@ -134,7 +130,19 @@ func TestObjectIterator(t *testing.T) {
 	})
 }
 
-func expectObjectNames(t *testing.T, actualObjects []*Object, expectedNames ...string) {
+func expectContainerHeadersCached(t *testing.T, c *schwift.Container) {
+	requestCountBefore := c.Account().Backend().(*RequestCountingBackend).Count
+	_, err := c.Headers()
+	expectSuccess(t, err)
+	requestCountAfter := c.Account().Backend().(*RequestCountingBackend).Count
+
+	t.Helper()
+	if requestCountBefore != requestCountAfter {
+		t.Error("Container.Headers() was expected to use cache, but issued HEAD request")
+	}
+}
+
+func expectObjectNames(t *testing.T, actualObjects []*schwift.Object, expectedNames ...string) {
 	t.Helper()
 	if len(actualObjects) != len(expectedNames) {
 		t.Errorf("expected %d objects, got %d objects",
@@ -149,7 +157,7 @@ func expectObjectNames(t *testing.T, actualObjects []*Object, expectedNames ...s
 	}
 }
 
-func expectObjectInfos(t *testing.T, actualInfos []ObjectInfo, expectedNames ...string) {
+func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedNames ...string) {
 	t.Helper()
 	if len(actualInfos) != len(expectedNames) {
 		t.Errorf("expected %d objects, got %d objects",

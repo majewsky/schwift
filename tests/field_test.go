@@ -16,16 +16,18 @@
 *
 ******************************************************************************/
 
-package schwift
+package tests
 
 import (
 	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/majewsky/schwift"
 )
 
 func TestFieldString(t *testing.T) {
-	hdr := make(AccountHeaders)
+	hdr := make(schwift.AccountHeaders)
 	expectBool(t, hdr.TempURLKey().Exists(), false)
 	expectString(t, hdr.TempURLKey().Get(), "")
 	expectSuccess(t, hdr.Validate())
@@ -59,7 +61,7 @@ func TestFieldString(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func TestFieldTimestamp(t *testing.T) {
-	testWithAccount(t, func(a *Account) {
+	testWithAccount(t, func(a *schwift.Account) {
 		hdr, err := a.Headers()
 		if !expectSuccess(t, err) {
 			return
@@ -72,7 +74,7 @@ func TestFieldTimestamp(t *testing.T) {
 		expectFloat64(t, actual, expected)
 	})
 
-	hdr := make(AccountHeaders)
+	hdr := make(schwift.AccountHeaders)
 	expectBool(t, hdr.CreatedAt().Exists(), false)
 	expectBool(t, hdr.CreatedAt().Get().IsZero(), true)
 	expectSuccess(t, hdr.Validate())
@@ -84,7 +86,7 @@ func TestFieldTimestamp(t *testing.T) {
 }
 
 func TestFieldHTTPTimestamp(t *testing.T) {
-	testWithContainer(t, func(c *Container) {
+	testWithContainer(t, func(c *schwift.Container) {
 		obj := c.Object("test")
 		err := obj.Upload(nil, nil, nil)
 		if !expectSuccess(t, err) {
@@ -102,7 +104,7 @@ func TestFieldHTTPTimestamp(t *testing.T) {
 		expectInt64(t, actual.Unix(), expected.Unix())
 	})
 
-	hdr := make(ObjectHeaders)
+	hdr := make(schwift.ObjectHeaders)
 	expectBool(t, hdr.UpdatedAt().Exists(), false)
 	expectBool(t, hdr.UpdatedAt().Get().IsZero(), true)
 	expectSuccess(t, hdr.Validate())
@@ -116,7 +118,7 @@ func TestFieldHTTPTimestamp(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func TestFieldUint64(t *testing.T) {
-	hdr := make(AccountHeaders)
+	hdr := make(schwift.AccountHeaders)
 	expectBool(t, hdr.BytesUsedQuota().Exists(), false)
 	expectUint64(t, hdr.BytesUsedQuota().Get(), 0)
 	expectSuccess(t, hdr.Validate())
@@ -148,7 +150,7 @@ func TestFieldUint64(t *testing.T) {
 }
 
 func TestFieldUint64Readonly(t *testing.T) {
-	hdr := make(AccountHeaders)
+	hdr := make(schwift.AccountHeaders)
 	expectBool(t, hdr.BytesUsed().Exists(), false)
 	expectUint64(t, hdr.BytesUsed().Get(), 0)
 	expectSuccess(t, hdr.Validate())
