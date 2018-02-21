@@ -38,12 +38,9 @@ func TestObjectLifecycle(t *testing.T) {
 		if o.Container() != c {
 			t.Errorf("expected o.Container() = %#v, got %#v instead\n", c, o.Container())
 		}
+		expectObjectExistence(t, o, false)
 
-		exists, err := o.Exists()
-		expectSuccess(t, err)
-		expectBool(t, exists, false)
-
-		_, err = o.Headers()
+		_, err := o.Headers()
 		expectError(t, err, "expected 200 response, got 404 instead")
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
@@ -56,9 +53,7 @@ func TestObjectLifecycle(t *testing.T) {
 		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
 		expectSuccess(t, err)
 
-		exists, err = o.Exists()
-		expectSuccess(t, err)
-		expectBool(t, exists, true)
+		expectObjectExistence(t, o, true)
 
 		err = o.Delete(nil, nil)
 		expectSuccess(t, err)
@@ -67,33 +62,24 @@ func TestObjectLifecycle(t *testing.T) {
 
 func TestObjectUpload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		validateUploadedFile := func(obj *schwift.Object, expected []byte) {
-			str, err := obj.Download(nil, nil).AsString()
-			expectSuccess(t, err)
-			expectString(t, str, string(expected))
-			obj.Invalidate()
-			hdr, err := obj.Headers()
-			expectSuccess(t, err)
-			expectString(t, hdr.Etag().Get(), etagOf(expected))
-		}
 
 		//test upload with bytes.Reader
 		obj := c.Object("upload1")
 		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
-		validateUploadedFile(obj, objectExampleContent)
+		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with bytes.Buffer
 		obj = c.Object("upload2")
 		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
-		validateUploadedFile(obj, objectExampleContent)
+		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with opaque io.Reader
 		obj = c.Object("upload3")
 		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil, nil)
 		expectSuccess(t, err)
-		validateUploadedFile(obj, objectExampleContent)
+		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with io.Writer
 		obj = c.Object("upload4")
@@ -102,19 +88,19 @@ func TestObjectUpload(t *testing.T) {
 			return err
 		})
 		expectSuccess(t, err)
-		validateUploadedFile(obj, objectExampleContent)
+		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with empty reader (should create zero-byte-sized object)
 		obj = c.Object("upload5")
 		err = obj.Upload(eofReader{}, nil, nil)
 		expectSuccess(t, err)
-		validateUploadedFile(obj, nil)
+		expectObjectContent(t, obj, nil)
 
 		//test upload without reader (should create zero-byte-sized object)
 		obj = c.Object("upload6")
 		err = obj.Upload(nil, nil, nil)
 		expectSuccess(t, err)
-		validateUploadedFile(obj, nil)
+		expectObjectContent(t, obj, nil)
 	})
 }
 
@@ -192,4 +178,45 @@ func TestObjectUpdate(t *testing.T) {
 		expectSuccess(t, err)
 		expectString(t, hdr.ContentType().Get(), "application/json")
 	})
+}
+
+func TestObjectCopyMove(t *testing.T) {
+	testWithContainer(t, func(c *schwift.Container) {
+		obj1 := c.Object("location1")
+		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
+		expectSuccess(t, err)
+		expectObjectExistence(t, obj1, true)
+
+		obj2 := c.Object("location2")
+		expectSuccess(t, obj1.CopyTo(obj2, nil, nil))
+		expectObjectExistence(t, obj1, true)
+		expectObjectExistence(t, obj2, true)
+		expectObjectContent(t, obj2, objectExampleContent)
+
+		obj3 := c.Object("location3")
+		expectSuccess(t, obj1.MoveTo(obj3, nil, nil))
+		expectObjectExistence(t, obj1, false)
+		expectObjectExistence(t, obj2, true)
+		expectObjectExistence(t, obj3, true)
+		expectObjectContent(t, obj3, objectExampleContent)
+	})
+}
+
+func expectObjectExistence(t *testing.T, obj *schwift.Object, expectedExists bool) {
+	t.Helper()
+	obj.Invalidate()
+	actualExists, err := obj.Exists()
+	expectSuccess(t, err)
+	expectBool(t, actualExists, expectedExists)
+}
+
+func expectObjectContent(t *testing.T, obj *schwift.Object, expected []byte) {
+	t.Helper()
+	str, err := obj.Download(nil, nil).AsString()
+	expectSuccess(t, err)
+	expectString(t, str, string(expected))
+	obj.Invalidate()
+	hdr, err := obj.Headers()
+	expectSuccess(t, err)
+	expectString(t, hdr.Etag().Get(), etagOf(expected))
 }

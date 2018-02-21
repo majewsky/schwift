@@ -60,8 +60,9 @@ func (o *Object) Name() string {
 }
 
 //FullName returns the container name and object name joined together with a
-//slash. This identifier is used by Swift in several places (DLO manifests,
-//symlink targets, etc.) to refer to an object within an account. For example:
+//slash. This identifier is used by Swift in several places (large object
+//manifests, symlink targets, etc.) to refer to an object within an account.
+//For example:
 //
 //	obj := account.Container("docs").Object("2018-02-10/invoice.pdf")
 //	obj.Name()     //returns      "2018-02-10/invoice.pdf"
@@ -159,7 +160,8 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 //these parameters, http.StatusUnprocessableEntity is returned. If Etag is not
 //supplied and cannot be computed in advance, Upload() will compute the Etag as
 //data is read from the io.Reader, and compare the result to the Etag returned
-//by Swift, returning ErrChecksumMismatch in case of mismatch.
+//by Swift, returning ErrChecksumMismatch in case of mismatch. The object will
+//have been uploaded at that point, so you will usually want to Delete() it.
 //
 //This function can be used regardless of whether the object exists or not.
 //
@@ -308,6 +310,7 @@ func (o *Object) Invalidate() {
 //
 //	str, err := object.Download(nil, nil).AsString()
 //
+//See struct DownloadedObject for details.
 func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) DownloadedObject {
 	resp, err := Request{
 		Method:            "GET",
@@ -318,14 +321,58 @@ func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) Downloade
 		ExpectStatusCodes: []int{200},
 	}.Do(o.c.a.backend)
 	if err == nil {
-		headers := ObjectHeaders(headersFromHTTP(resp.Header))
-		err = headers.Validate()
+		newHeaders := ObjectHeaders(headersFromHTTP(resp.Header))
+		err = newHeaders.Validate()
 		if err == nil {
-			o.headers = &headers
+			o.headers = &newHeaders
 		}
 	}
 	return DownloadedObject{resp.Body, err}
 }
 
-//TODO Object.Copy(), Object.Move()
-//TODO provide a companion to Object.Upload() to connect it with content-generating functions where an io.Writer needs to be given
+//CopyTo copies the object on the server side using a COPY request. To copy
+//only the content, not the metadata, use the X-Fresh-Metadata header:
+//
+//	hdr := make(ObjectHeaders)
+//	hdr.Set("X-Fresh-Metadata", "true")
+//	err := sourceObject.CopyTo(targetObject, hdr, nil)
+//
+//If X-Fresh-Metadata is not set (or set to false), all metadata from the
+//source object will be copied to the target, but you can overwrite metadata by
+//providing new values in the headers argument, like with Update().
+//
+//A successful COPY implies target.Invalidate() since it may change the
+//target's metadata.
+func (o *Object) CopyTo(target *Object, headers ObjectHeaders, opts *RequestOptions) error {
+	hdr := headersToHTTP(headers)
+	hdr.Set("Destination", target.FullName())
+	if o.c.a.name != target.c.a.name {
+		hdr.Set("Destination-Account", target.c.a.name)
+	}
+
+	_, err := Request{
+		Method:            "COPY",
+		ContainerName:     o.c.name,
+		ObjectName:        o.name,
+		Headers:           hdr,
+		Options:           opts,
+		ExpectStatusCodes: []int{201},
+		DrainResponseBody: true,
+	}.Do(o.c.a.backend)
+	if err == nil {
+		target.Invalidate()
+	}
+	return err
+}
+
+//MoveTo moves the object on the server side, using a COPY request followed by
+//a DELETE request on the source object.
+//
+//A successful move implies Invalidate() on both the source and target side.
+func (o *Object) MoveTo(target *Object, headers ObjectHeaders, opts *RequestOptions) error {
+	err := o.CopyTo(target, headers, opts)
+	if err != nil {
+		return err
+	}
+	return o.Delete(nil, nil)
+}
