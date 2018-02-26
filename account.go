@@ -19,8 +19,11 @@
 package schwift
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
+	"strings"
 )
 
 //Account represents a Swift account.
@@ -31,6 +34,7 @@ type Account struct {
 	name    string
 	//cache
 	headers *AccountHeaders
+	caps    *Capabilities
 }
 
 var endpointURLRegexp = regexp.MustCompile(`^(.*/)v1/(.*)/$`)
@@ -168,4 +172,50 @@ func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
 //
 func (a *Account) Containers() *ContainerIterator {
 	return &ContainerIterator{Account: a}
+}
+
+//Capabilities queries the GET /info endpoint of the Swift server providing
+//this account. Capabilities are cached, so the GET request will only be sent
+//once during the first call to this method.
+func (a *Account) Capabilities() (Capabilities, error) {
+	if a.caps != nil {
+		return *a.caps, nil
+	}
+
+	buf, err := a.RawCapabilities()
+	if err != nil {
+		return Capabilities{}, err
+	}
+
+	var caps Capabilities
+	err = json.Unmarshal(buf, &caps)
+	if err != nil {
+		return caps, err
+	}
+
+	a.caps = &caps
+	return caps, nil
+}
+
+//RawCapabilities queries the GET /info endpoint of the Swift server providing
+//this account, and returns the response body. Unlike Account.Capabilities,
+//this method does not employ any caching.
+func (a *Account) RawCapabilities() ([]byte, error) {
+	//This method is the only one in Schwift that bypasses struct Request since
+	//the request URL is not below the endpoint URL.
+
+	uri := a.backend.EndpointURL()
+	uri = strings.TrimPrefix(uri, "/")
+	uri = strings.TrimPrefix(uri, "/v1")
+	uri += "/info"
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := a.backend.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return collectResponseBody(resp)
 }
