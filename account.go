@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 )
 
 //Account represents a Swift account.
@@ -203,13 +202,7 @@ func (a *Account) Capabilities() (Capabilities, error) {
 func (a *Account) RawCapabilities() ([]byte, error) {
 	//This method is the only one in Schwift that bypasses struct Request since
 	//the request URL is not below the endpoint URL.
-
-	uri := a.backend.EndpointURL()
-	uri = strings.TrimPrefix(uri, "/")
-	uri = strings.TrimPrefix(uri, "/v1")
-	uri += "/info"
-
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest("GET", a.baseURL+"info", nil)
 	if err != nil {
 		return nil, err
 	}
