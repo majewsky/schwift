@@ -66,7 +66,7 @@ func (e UnexpectedStatusCodeError) Error() string {
 }
 
 //BulkObjectError is the error message for a single object in a bulk operation.
-//It is not generated individually, only as part of BulkUploadError and BulkDeleteError.
+//It is not generated individually, only as part of BulkError.
 type BulkObjectError struct {
 	ContainerName string
 	ObjectName    string
@@ -81,27 +81,27 @@ func (e BulkObjectError) Error() string {
 	)
 }
 
-//BulkUploadError is returned by Account.BulkUpload() when the archive was
-//uploaded and unpacked successfully, but some (or all) files could not be
-//saved in Swift.
-type BulkUploadError struct {
+//BulkError is returned by Account.BulkUpload() when the archive was
+//uploaded and unpacked successfully, but some (or all) objects could not be
+//saved in Swift; and by Account.BulkDelete() when not all requested objects
+//could be deleted.
+type BulkError struct {
 	//StatusCode contains the overall HTTP status code of the operation.
 	StatusCode int
-	//ArchiveError contains the error that occurred while unpacking the archive,
-	//or if the archive as a whole was not acceptable. If may be empty if no
-	//error occurred at this point.
-	ArchiveError string
-	//ObjectErrors contains errors that occurred while trying to save an
-	//individual file from the archive. It may be empty.
+	//OverallError contains the fatal error that aborted the bulk operation, or a
+	//summary of which recoverable errors were encountered. It may be empty.
+	OverallError string
+	//ObjectErrors contains errors that occurred while working on individual
+	//objects. It may be empty if no such errors occurred.
 	ObjectErrors []BulkObjectError
 }
 
 //Error implements the builtin/error interface. To fit into one line, it
 //condenses the ObjectErrors into a count.
-func (e BulkUploadError) Error() string {
+func (e BulkError) Error() string {
 	result := fmt.Sprintf("%d %s", e.StatusCode, http.StatusText(e.StatusCode))
-	if e.ArchiveError != "" {
-		result += ": " + e.ArchiveError
+	if e.OverallError != "" {
+		result += ": " + e.OverallError
 	}
 	if len(e.ObjectErrors) > 0 {
 		result += fmt.Sprintf(" (+%d object errors)", len(e.ObjectErrors))

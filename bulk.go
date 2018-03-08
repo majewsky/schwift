@@ -56,7 +56,7 @@ const (
 //exceeded in the middle of the archive extraction).
 //
 //If not nil, the error return value is *usually* an instance of
-//schwift.BulkUploadError.
+//BulkError.
 //
 //This operation returns (0, ErrNotSupported) if the server does not support
 //bulk-uploading.
@@ -114,9 +114,9 @@ func (a *Account) BulkUpload(uploadPath string, format BulkUploadFormat, content
 		return 0, err
 	}
 
-	//parse `result` into type BulkUploadError
-	bulkErr := BulkUploadError{
-		ArchiveError: result.ResponseBody,
+	//parse `result` into type BulkError
+	bulkErr := BulkError{
+		OverallError: result.ResponseBody,
 	}
 	bulkErr.StatusCode, err = parseResponseStatus(result.ResponseStatus)
 	if err != nil {
@@ -141,8 +141,8 @@ func (a *Account) BulkUpload(uploadPath string, format BulkUploadFormat, content
 		})
 	}
 
-	//is BulkUploadError really an error?
-	if len(bulkErr.ObjectErrors) == 0 && bulkErr.ArchiveError == "" && bulkErr.StatusCode >= 200 && bulkErr.StatusCode < 300 {
+	//is BulkError really an error?
+	if len(bulkErr.ObjectErrors) == 0 && bulkErr.OverallError == "" && bulkErr.StatusCode >= 200 && bulkErr.StatusCode < 300 {
 		return result.NumberFilesCreated, nil
 	}
 	return result.NumberFilesCreated, bulkErr

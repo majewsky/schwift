@@ -207,6 +207,8 @@ func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestO
 	return nil
 }
 
+//TODO add support for strings.Reader below
+
 func tryComputeContentLength(content io.Reader, headers ObjectHeaders) {
 	h := headers.SizeBytes()
 	if h.Exists() {
