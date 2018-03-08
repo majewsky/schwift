@@ -320,14 +320,16 @@ func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) Downloade
 		Options:           opts,
 		ExpectStatusCodes: []int{200},
 	}.Do(o.c.a.backend)
+	var body io.ReadCloser
 	if err == nil {
 		newHeaders := ObjectHeaders(headersFromHTTP(resp.Header))
 		err = newHeaders.Validate()
 		if err == nil {
 			o.headers = &newHeaders
 		}
+		body = resp.Body
 	}
-	return DownloadedObject{resp.Body, err}
+	return DownloadedObject{body, err}
 }
 
 //CopyTo copies the object on the server side using a COPY request. To copy
