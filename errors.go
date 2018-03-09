@@ -39,6 +39,10 @@ var (
 	//ErrNotSupported is returned by bulk operations, large object operations,
 	//etc. if the server does not support the requested operation.
 	ErrNotSupported = errors.New("operation not supported by this Swift server")
+	//ErrAccountMismatch is returned by operations on an account that accept
+	//objects as arguments, if (some of) the provided objects are located in a
+	//different account.
+	ErrAccountMismatch = errors.New("some of the given objects are not in this account")
 )
 
 //UnexpectedStatusCodeError is generated when a request to Swift does not yield

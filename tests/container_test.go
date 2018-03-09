@@ -83,3 +83,11 @@ func TestContainerUpdate(t *testing.T) {
 
 	})
 }
+
+func expectContainerExistence(t *testing.T, c *schwift.Container, expectedExists bool) {
+	t.Helper()
+	c.Invalidate()
+	actualExists, err := c.Exists()
+	expectSuccess(t, err)
+	expectBool(t, actualExists, expectedExists)
+}
