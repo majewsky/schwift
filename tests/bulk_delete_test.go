@@ -33,13 +33,13 @@ func TestBulkDeleteSuccess(t *testing.T) {
 		objs, err := createTestObjects(c)
 		expectSuccess(t, err)
 
-		numDeleted, numNotFound, err := c.Account().BulkDelete(objs, nil, nil, nil)
+		numDeleted, numNotFound, err := c.Account().BulkDelete(objs, nil, nil)
 		expectSuccess(t, err)
 		expectInt(t, numDeleted, len(objs))
 		expectInt(t, numNotFound, 0)
 		expectContainerExistence(t, c, true)
 
-		numDeleted, numNotFound, err = c.Account().BulkDelete(objs, nil, nil, nil)
+		numDeleted, numNotFound, err = c.Account().BulkDelete(objs, nil, nil)
 		expectSuccess(t, err)
 		expectInt(t, numDeleted, 0)
 		expectInt(t, numNotFound, len(objs))
@@ -49,7 +49,7 @@ func TestBulkDeleteSuccess(t *testing.T) {
 		expectSuccess(t, err)
 		cs := []*schwift.Container{c}
 
-		numDeleted, numNotFound, err = c.Account().BulkDelete(objs, cs, nil, nil)
+		numDeleted, numNotFound, err = c.Account().BulkDelete(objs, cs, nil)
 		expectSuccess(t, err)
 		expectInt(t, numDeleted, len(objs)+1)
 		expectInt(t, numNotFound, 0)
@@ -65,7 +65,7 @@ func TestBulkDeleteError(t *testing.T) {
 		cs := []*schwift.Container{c}
 
 		//not deleting all objects should lead to 409 Conflict when deleting the Container
-		numDeleted, numNotFound, err := c.Account().BulkDelete(objs, cs, nil, nil)
+		numDeleted, numNotFound, err := c.Account().BulkDelete(objs, cs, nil)
 		expectInt(t, numDeleted, len(objs))
 		expectInt(t, numNotFound, 0)
 		expectError(t, err, "400 Bad Request (+1 object errors)")
@@ -77,7 +77,7 @@ func createTestObjects(c *schwift.Container) ([]*schwift.Object, error) {
 	var objs []*schwift.Object
 	for idx := 1; idx <= 5; idx++ {
 		obj := c.Object(fmt.Sprintf("object%d", idx))
-		err := obj.Upload(strings.NewReader("example"), nil, nil)
+		err := obj.Upload(strings.NewReader("example"), nil)
 		if err != nil {
 			return nil, err
 		}

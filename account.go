@@ -98,7 +98,7 @@ func (a *Account) Headers() (AccountHeaders, error) {
 		return AccountHeaders{}, err
 	}
 
-	headers := AccountHeaders(headersFromHTTP(resp.Header))
+	headers := AccountHeaders{headersFromHTTP(resp.Header)}
 	err = headers.Validate()
 	if err != nil {
 		return headers, err
@@ -113,15 +113,14 @@ func (a *Account) Invalidate() {
 	a.headers = nil
 }
 
-//Update updates the account using a POST request. To add URL parameters, pass
-//a non-nil *RequestOptions.
+//Update updates the account using a POST request. The headers in the headers
+//attribute take precedence over those in opts.Headers.
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
-		Headers:           headersToHTTP(headers),
-		Options:           opts,
+		Options:           cloneRequestOptions(opts, headers.Headers),
 		ExpectStatusCodes: []int{204},
 	}.Do(a.backend)
 	if err == nil {
@@ -130,17 +129,13 @@ func (a *Account) Update(headers AccountHeaders, opts *RequestOptions) error {
 	return err
 }
 
-//Create creates the account using a PUT request. To add URL parameters, pass
-//a non-nil *RequestOptions.
-//
-//Note that this operation is only available to reseller admins, not to regular
-//users.
+//Create creates the account using a PUT request. This operation is only
+//available to reseller admins, not to regular users.
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
-func (a *Account) Create(headers AccountHeaders, opts *RequestOptions) error {
+func (a *Account) Create(opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "PUT",
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,

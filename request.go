@@ -26,19 +26,38 @@ import (
 	"strings"
 )
 
-//RequestOptions contains additional headers and values for a request.
+//RequestOptions is used to pass additional headers and values to aa request.
+//
+//When preparing a RequestOptions instance with additional headers, the
+//preferred way is to create an AccountHeaders, ContainerHeaders and
+//ObjectHeaders instance and use the type-safe API on these types. Then use the
+//ToOpts() method on that instance. For example:
+//
+//	hdr := NewObjectHeaders()
+//	hdr.ContentType().Set("image/png")
+//	hdr.Metadata().Set("color", "blue")
+//	opts := hdr.ToOpts() //type *schwift.RequestOptions
+//
 type RequestOptions struct {
-	Values url.Values
+	Headers Headers
+	Values  url.Values
 }
 
-func cloneRequestOptions(orig *RequestOptions) *RequestOptions {
+func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptions {
 	result := RequestOptions{
-		Values: make(url.Values),
+		Headers: make(Headers),
+		Values:  make(url.Values),
 	}
 	if orig != nil {
+		for k, v := range orig.Headers {
+			result.Headers[k] = v
+		}
 		for k, v := range orig.Values {
 			result.Values[k] = v
 		}
+	}
+	for k, v := range additional {
+		result.Headers[k] = v
 	}
 	return &result
 }
@@ -48,7 +67,6 @@ type Request struct {
 	Method        string //"GET", "HEAD", "PUT", "POST" or "DELETE"
 	ContainerName string //empty for requests on accounts
 	ObjectName    string //empty for requests on accounts/containers
-	Headers       http.Header
 	Options       *RequestOptions
 	Body          io.Reader
 	//ExpectStatusCodes can be left empty to disable this check, otherwise
@@ -102,8 +120,10 @@ func (r Request) Do(backend Backend) (*http.Response, error) {
 		return nil, err
 	}
 
-	for k, v := range r.Headers {
-		req.Header[k] = v
+	if r.Options != nil {
+		for k, v := range r.Options.Headers {
+			req.Header[k] = []string{v}
+		}
 	}
 	if r.Body != nil {
 		req.Header.Set("Expect", "100-continue")

@@ -46,17 +46,17 @@ func TestContainerLifecycle(t *testing.T) {
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
-		err = c.Delete(nil, nil)
+		err = c.Delete(nil)
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
-		err = c.Create(nil, nil)
+		err = c.Create(nil)
 		expectSuccess(t, err)
 
 		exists, err = c.Exists()
 		expectSuccess(t, err)
 		expectBool(t, exists, true)
 
-		err = c.Delete(nil, nil)
+		err = c.Delete(nil)
 		expectSuccess(t, err)
 	})
 }
@@ -69,7 +69,7 @@ func TestContainerUpdate(t *testing.T) {
 		expectBool(t, hdr.ObjectCount().Exists(), true)
 		expectUint64(t, hdr.ObjectCount().Get(), 0)
 
-		hdr = make(schwift.ContainerHeaders)
+		hdr = schwift.NewContainerHeaders()
 		hdr.ObjectCountQuota().Set(23)
 		hdr.BytesUsedQuota().Set(42)
 

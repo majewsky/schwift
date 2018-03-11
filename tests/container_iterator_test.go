@@ -126,7 +126,7 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
-			return c.Delete(nil, nil)
+			return c.Delete(nil)
 		}))
 	})
 }

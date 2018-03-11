@@ -37,9 +37,9 @@ func TestObjectIterator(t *testing.T) {
 
 		//create test objects that can be listed
 		for idx := 1; idx <= 4; idx++ {
-			hdr := make(schwift.ObjectHeaders)
+			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
-			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), hdr, nil)
+			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), hdr.ToOpts())
 			expectSuccess(t, err)
 		}
 

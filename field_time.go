@@ -28,25 +28,25 @@ import (
 //FieldHTTPTimeReadonly is a helper type that provides type-safe access to a
 //readonly Swift header whose value is a HTTP timestamp like this:
 //
-//    Mon, 02 Jan 2006 15:04:05 GMT
+//	Mon, 02 Jan 2006 15:04:05 GMT
 //
 //It cannot be directly constructed, but methods on the Headers types return
 //this type. For example:
 //
-//    //suppose you have:
-//    hdr, err := obj.Headers()
+//	//suppose you have:
+//	hdr, err := obj.Headers()
 //
-//    //you could do this:
-//    time, err := time.Parse(time.RFC1123, hdr.Get("Last-Modified"))
+//	//you could do this:
+//	time, err := time.Parse(time.RFC1123, hdr.Get("Last-Modified"))
 //
-//    //or you can just:
-//    time := hdr.UpdatedAt().Get()
+//	//or you can just:
+//	time := hdr.UpdatedAt().Get()
 //
 //Don't worry about the missing `err` in the last line. When the header fails
 //to parse, Object.Headers() already returns the corresponding
 //MalformedHeaderError.
 type FieldHTTPTimeReadonly struct {
-	h headerInterface
+	h Headers
 	k string
 }
 
@@ -83,21 +83,21 @@ func (f FieldHTTPTimeReadonly) validate() error {
 //header whose value is a UNIX timestamp. It cannot be directly constructed,
 //but methods on the Headers types return this type. For example:
 //
-//    //suppose you have:
-//    hdr, err := obj.Headers()
+//	//suppose you have:
+//	hdr, err := obj.Headers()
 //
-//    //you could do all this:
-//    sec, err := strconv.ParseFloat(hdr.Get("X-Delete-At"), 64)
-//    time := time.Unix(0, int64(1e9 * sec))
+//	//you could do all this:
+//	sec, err := strconv.ParseFloat(hdr.Get("X-Delete-At"), 64)
+//	time := time.Unix(0, int64(1e9 * sec))
 //
-//    //or you can just:
-//    time := hdr.ExpiresAt().Get()
+//	//or you can just:
+//	time := hdr.ExpiresAt().Get()
 //
 //Don't worry about the missing `err` in the last line. When the header fails
 //to parse, Object.Headers() already returns the corresponding
 //MalformedHeaderError.
 type FieldUnixTime struct {
-	h headerInterface
+	h Headers
 	k string
 }
 
@@ -151,7 +151,7 @@ func (f FieldUnixTime) validate() error {
 //FieldUnixTimeReadonly is a readonly variant of FieldUnixTime. It is used for
 //fields that cannot be set by the client.
 type FieldUnixTimeReadonly struct {
-	h headerInterface
+	h Headers
 	k string
 }
 

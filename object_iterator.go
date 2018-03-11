@@ -65,12 +65,10 @@ type ObjectIterator struct {
 	//When Prefix is set, only objects whose name starts with this string are
 	//returned.
 	Prefix string
-	//Headers may contain additional headers to include with the GET request.
-	Headers map[string]string
-	//Options may contain additional query parameters for the GET request.
+	//Options may contain additional headers and query parameters for the GET request.
 	Options *RequestOptions
 
-	//TODO: Delimter field (and check if other stuff is missing)
+	//TODO: Delimiter field (and check if other stuff is missing)
 
 	base *iteratorBase
 }

@@ -116,7 +116,7 @@ func (e BulkError) Error() string {
 //Is checks if the given error is an UnexpectedStatusCodeError for that status
 //code. For example:
 //
-//	err := container.Delete(nil, nil)
+//	err := container.Delete(nil)
 //	if err != nil {
 //	    if schwift.Is(err, http.StatusNotFound) {
 //	        //container does not exist -> just what we wanted

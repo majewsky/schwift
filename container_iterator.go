@@ -64,9 +64,7 @@ type ContainerIterator struct {
 	//When Prefix is set, only containers whose name starts with this string are
 	//returned.
 	Prefix string
-	//Headers may contain additional headers to include with the GET request.
-	Headers map[string]string
-	//Options may contain additional query parameters for the GET request.
+	//Options may contain additional headers and query parameters for the GET request.
 	Options *RequestOptions
 
 	base *iteratorBase

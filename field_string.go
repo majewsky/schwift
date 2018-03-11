@@ -22,12 +22,12 @@ package schwift
 //whose value is a string. It cannot be directly constructed, but methods on
 //the Headers types return this type. For example:
 //
-//    hdr := make(AccountHeaders)
-//    //the following two statements are equivalent:
-//    hdr["X-Container-Read"] = ".r:*,.rlistings"
-//    hdr.ReadACL().Set(".r:*,.rlistings")
+//	hdr := NewAccountHeaders()
+//	//the following two statements are equivalent:
+//	hdr["X-Container-Read"] = ".r:*,.rlistings"
+//	hdr.ReadACL().Set(".r:*,.rlistings")
 type FieldString struct {
-	h headerInterface
+	h Headers
 	k string
 }
 

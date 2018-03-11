@@ -31,21 +31,19 @@ type iteratorInterface interface {
 	getAccount() *Account
 	getContainerName() string
 	getPrefix() string
-	getHeaders() map[string]string
 	getOptions() *RequestOptions
 	//putHeader initializes the AccountHeaders/ContainerHeaders field of the
 	//Account/Container using the response headers from the GET request.
 	putHeader(http.Header) error
 }
 
-func (i ContainerIterator) getAccount() *Account          { return i.Account }
-func (i ContainerIterator) getContainerName() string      { return "" }
-func (i ContainerIterator) getPrefix() string             { return i.Prefix }
-func (i ContainerIterator) getHeaders() map[string]string { return i.Headers }
-func (i ContainerIterator) getOptions() *RequestOptions   { return i.Options }
+func (i ContainerIterator) getAccount() *Account        { return i.Account }
+func (i ContainerIterator) getContainerName() string    { return "" }
+func (i ContainerIterator) getPrefix() string           { return i.Prefix }
+func (i ContainerIterator) getOptions() *RequestOptions { return i.Options }
 
 func (i ContainerIterator) putHeader(hdr http.Header) error {
-	headers := AccountHeaders(headersFromHTTP(hdr))
+	headers := AccountHeaders{headersFromHTTP(hdr)}
 	if err := headers.Validate(); err != nil {
 		return err
 	}
@@ -53,14 +51,13 @@ func (i ContainerIterator) putHeader(hdr http.Header) error {
 	return nil
 }
 
-func (i ObjectIterator) getAccount() *Account          { return i.Container.Account() }
-func (i ObjectIterator) getContainerName() string      { return i.Container.Name() }
-func (i ObjectIterator) getPrefix() string             { return i.Prefix }
-func (i ObjectIterator) getHeaders() map[string]string { return i.Headers }
-func (i ObjectIterator) getOptions() *RequestOptions   { return i.Options }
+func (i ObjectIterator) getAccount() *Account        { return i.Container.Account() }
+func (i ObjectIterator) getContainerName() string    { return i.Container.Name() }
+func (i ObjectIterator) getPrefix() string           { return i.Prefix }
+func (i ObjectIterator) getOptions() *RequestOptions { return i.Options }
 
 func (i ObjectIterator) putHeader(hdr http.Header) error {
-	headers := ContainerHeaders(headersFromHTTP(hdr))
+	headers := ContainerHeaders{headersFromHTTP(hdr)}
 	if err := headers.Validate(); err != nil {
 		return err
 	}
@@ -79,8 +76,7 @@ func (b *iteratorBase) request(limit int, detailed bool) Request {
 	r := Request{
 		Method:        "GET",
 		ContainerName: b.i.getContainerName(),
-		Headers:       headersToHTTP(b.i.getHeaders()),
-		Options:       cloneRequestOptions(b.i.getOptions()),
+		Options:       cloneRequestOptions(b.i.getOptions(), nil),
 	}
 
 	if prefix := b.i.getPrefix(); prefix != "" {
@@ -100,11 +96,11 @@ func (b *iteratorBase) request(limit int, detailed bool) Request {
 	}
 
 	if detailed {
-		r.Headers.Set("Accept", "application/json")
+		r.Options.Headers.Set("Accept", "application/json")
 		r.Options.Values.Set("format", "json")
 		r.ExpectStatusCodes = []int{200}
 	} else {
-		r.Headers.Set("Accept", "text/plain")
+		r.Options.Headers.Set("Accept", "text/plain")
 		r.Options.Values.Set("format", "plain")
 		r.ExpectStatusCodes = []int{200, 204}
 	}

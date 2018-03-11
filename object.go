@@ -104,7 +104,7 @@ func (o *Object) Headers() (ObjectHeaders, error) {
 		return ObjectHeaders{}, err
 	}
 
-	headers := ObjectHeaders(headersFromHTTP(resp.Header))
+	headers := ObjectHeaders{headersFromHTTP(resp.Header)}
 	err = headers.Validate()
 	if err != nil {
 		return headers, err
@@ -124,8 +124,7 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 		Method:            "POST",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Headers:           headersToHTTP(headers),
-		Options:           opts,
+		Options:           cloneRequestOptions(opts, headers.Headers),
 		ExpectStatusCodes: []int{202},
 	}.Do(o.c.a.backend)
 	if err == nil {
@@ -134,18 +133,17 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 	return err
 }
 
-//Upload creates the object using a PUT request. To add URL parameters, pass
-//a non-nil *RequestOptions.
+//Upload creates the object using a PUT request.
 //
 //If you do not have an io.Reader, but you have a []byte or string instance
 //containing the object, wrap it in a *bytes.Reader instance like so:
 //
 //	var buffer []byte
-//	o.Upload(bytes.NewReader(buffer), headers, opts)
+//	o.Upload(bytes.NewReader(buffer), opts)
 //
 //	//or...
 //	var buffer string
-//	o.Upload(bytes.NewReader([]byte(buffer)), headers, opts)
+//	o.Upload(bytes.NewReader([]byte(buffer)), opts)
 //
 //If you have neither an io.Reader nor a []byte or string, but you have a
 //function that generates the object's content into an io.Writer, use
@@ -166,16 +164,15 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 //This function can be used regardless of whether the object exists or not.
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
-func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestOptions) error {
-	if headers == nil {
-		headers = make(ObjectHeaders)
-	}
-	tryComputeContentLength(content, headers)
-	tryComputeEtag(content, headers)
+func (o *Object) Upload(content io.Reader, opts *RequestOptions) error {
+	opts = cloneRequestOptions(opts, nil)
+	hdr := ObjectHeaders{opts.Headers}
+	tryComputeContentLength(content, hdr)
+	tryComputeEtag(content, hdr)
 
 	//could not compute Etag in advance -> need to check on the fly
 	var hasher hash.Hash
-	if !headers.Etag().Exists() {
+	if !hdr.Etag().Exists() {
 		hasher = md5.New()
 		if content != nil {
 			content = io.TeeReader(content, hasher)
@@ -186,7 +183,6 @@ func (o *Object) Upload(content io.Reader, headers ObjectHeaders, opts *RequestO
 		Method:            "PUT",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		Body:              content,
 		ExpectStatusCodes: []int{201},
@@ -253,7 +249,7 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 //	}
 //
 //	obj := container.Object("greeting-for-susan-and-jeffrey")
-//	err := obj.UploadWithWriter(nil, nil, func(w io.Writer) error {
+//	err := obj.UploadWithWriter(nil, func(w io.Writer) error {
 //	    err := greeting(w, "Susan")
 //	    if err == nil {
 //	        err = greeting(w, "Jeffrey")
@@ -262,11 +258,11 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 //	})
 //
 //If you do not need an io.Writer, always use Upload instead.
-func (o *Object) UploadWithWriter(headers ObjectHeaders, opts *RequestOptions, callback func(io.Writer) error) error {
+func (o *Object) UploadWithWriter(opts *RequestOptions, callback func(io.Writer) error) error {
 	reader, writer := io.Pipe()
 	errChan := make(chan error)
 	go func() {
-		err := o.Upload(reader, headers, opts)
+		err := o.Upload(reader, opts)
 		reader.CloseWithError(err) //stop the writer if it is still writing
 		errChan <- err
 	}()
@@ -280,12 +276,11 @@ func (o *Object) UploadWithWriter(headers ObjectHeaders, opts *RequestOptions, c
 //This operation fails with http.StatusNotFound if the object does not exist.
 //
 //A successful DELETE request implies Invalidate().
-func (o *Object) Delete(headers ObjectHeaders, opts *RequestOptions) error {
+func (o *Object) Delete(opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "DELETE",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(o.c.a.backend)
@@ -313,18 +308,17 @@ func (o *Object) Invalidate() {
 //	str, err := object.Download(nil, nil).AsString()
 //
 //See struct DownloadedObject for details.
-func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) DownloadedObject {
+func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 	resp, err := Request{
 		Method:            "GET",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{200},
 	}.Do(o.c.a.backend)
 	var body io.ReadCloser
 	if err == nil {
-		newHeaders := ObjectHeaders(headersFromHTTP(resp.Header))
+		newHeaders := ObjectHeaders{headersFromHTTP(resp.Header)}
 		err = newHeaders.Validate()
 		if err == nil {
 			o.headers = &newHeaders
@@ -347,18 +341,17 @@ func (o *Object) Download(headers ObjectHeaders, opts *RequestOptions) Downloade
 //
 //A successful COPY implies target.Invalidate() since it may change the
 //target's metadata.
-func (o *Object) CopyTo(target *Object, headers ObjectHeaders, opts *RequestOptions) error {
-	hdr := headersToHTTP(headers)
-	hdr.Set("Destination", target.FullName())
+func (o *Object) CopyTo(target *Object, opts *RequestOptions) error {
+	opts = cloneRequestOptions(opts, nil)
+	opts.Headers.Set("Destination", target.FullName())
 	if o.c.a.name != target.c.a.name {
-		hdr.Set("Destination-Account", target.c.a.name)
+		opts.Headers.Set("Destination-Account", target.c.a.name)
 	}
 
 	_, err := Request{
 		Method:            "COPY",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Headers:           hdr,
 		Options:           opts,
 		ExpectStatusCodes: []int{201},
 		DrainResponseBody: true,
@@ -373,10 +366,10 @@ func (o *Object) CopyTo(target *Object, headers ObjectHeaders, opts *RequestOpti
 //a DELETE request on the source object.
 //
 //A successful move implies Invalidate() on both the source and target side.
-func (o *Object) MoveTo(target *Object, headers ObjectHeaders, opts *RequestOptions) error {
-	err := o.CopyTo(target, headers, opts)
+func (o *Object) MoveTo(target *Object, copyOpts *RequestOptions, deleteOpts *RequestOptions) error {
+	err := o.CopyTo(target, copyOpts)
 	if err != nil {
 		return err
 	}
-	return o.Delete(nil, nil)
+	return o.Delete(deleteOpts)
 }

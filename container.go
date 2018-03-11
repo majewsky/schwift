@@ -36,7 +36,7 @@ type Container struct {
 //container's existence, or chain this function with the EnsureExists()
 //function like so:
 //
-//    container, err := account.Container("documents").EnsureExists()
+//	container, err := account.Container("documents").EnsureExists()
 func (a *Account) Container(name string) *Container {
 	return &Container{a: a, name: name}
 }
@@ -81,7 +81,7 @@ func (c *Container) Headers() (ContainerHeaders, error) {
 		return ContainerHeaders{}, err
 	}
 
-	headers := ContainerHeaders(headersFromHTTP(resp.Header))
+	headers := ContainerHeaders{headersFromHTTP(resp.Header)}
 	err = headers.Validate()
 	if err != nil {
 		return headers, err
@@ -100,8 +100,7 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 	_, err := Request{
 		Method:            "POST",
 		ContainerName:     c.name,
-		Headers:           headersToHTTP(headers),
-		Options:           opts,
+		Options:           cloneRequestOptions(opts, headers.Headers),
 		ExpectStatusCodes: []int{204},
 	}.Do(c.a.backend)
 	if err == nil {
@@ -116,11 +115,10 @@ func (c *Container) Update(headers ContainerHeaders, opts *RequestOptions) error
 //This function can be used regardless of whether the container exists or not.
 //
 //A successful PUT request implies Invalidate() since it may change metadata.
-func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error {
+func (c *Container) Create(opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "PUT",
 		ContainerName:     c.name,
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,
@@ -139,11 +137,10 @@ func (c *Container) Create(headers ContainerHeaders, opts *RequestOptions) error
 //This operation fails with http.StatusNotFound if the container does not exist.
 //
 //A successful DELETE request implies Invalidate().
-func (c *Container) Delete(headers ContainerHeaders, opts *RequestOptions) error {
+func (c *Container) Delete(opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "DELETE",
 		ContainerName:     c.name,
-		Headers:           headersToHTTP(headers),
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
 	}.Do(c.a.backend)
@@ -165,7 +162,7 @@ func (c *Container) Invalidate() {
 //This function returns the same container again, because its intended use is
 //with freshly constructed Container instances like so:
 //
-//    container, err := account.Container("documents").EnsureExists()
+//	container, err := account.Container("documents").EnsureExists()
 func (c *Container) EnsureExists() (*Container, error) {
 	_, err := Request{
 		Method:            "PUT",

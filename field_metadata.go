@@ -22,12 +22,12 @@ package schwift
 //in a headers instance. It cannot be directly constructed, but each headers
 //type has a method "Metadata" returning this type. For example:
 //
-//    hdr := make(ObjectHeaders)
-//    //the following two statements are equivalent
-//    hdr["X-Object-Meta-Access"] = "strictly confidential"
-//    hdr.Metadata().Set("Access", "strictly confidential")
+//	hdr := NewObjectHeaders()
+//	//the following two statements are equivalent
+//	hdr["X-Object-Meta-Access"] = "strictly confidential"
+//	hdr.Metadata().Set("Access", "strictly confidential")
 type FieldMetadata struct {
-	h headerInterface
+	h Headers
 	k string
 }
 

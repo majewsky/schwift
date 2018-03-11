@@ -47,11 +47,11 @@ const (
 //For example, when uploading an archive that contains the file "a/b/c":
 //
 //	//This uploads the file into the container "a" as object "b/c".
-//	account.BulkUpload("", format, contents, nil, nil)
+//	account.BulkUpload("", format, contents, nil)
 //	//This uploads the file into the container "foo" as object "a/b/c".
-//	account.BulkUpload("foo", format, contents, nil, nil)
+//	account.BulkUpload("foo", format, contents, nil)
 //	//This uploads the file into the container "foo" as object "bar/baz/a/b/c".
-//	account.BulkUpload("foo/bar/baz", format, contents, nil, nil)
+//	account.BulkUpload("foo/bar/baz", format, contents, nil)
 //
 //The first return value indicates the number of files that have been created
 //on the server side. This may be lower than the number of files in the archive
@@ -63,7 +63,7 @@ const (
 //
 //This operation returns (0, ErrNotSupported) if the server does not support
 //bulk-uploading.
-func (a *Account) BulkUpload(uploadPath string, format BulkUploadFormat, contents io.Reader, headers AccountHeaders, opts *RequestOptions) (int, error) {
+func (a *Account) BulkUpload(uploadPath string, format BulkUploadFormat, contents io.Reader, opts *RequestOptions) (int, error) {
 	caps, err := a.Capabilities()
 	if err != nil {
 		return 0, err
@@ -75,11 +75,10 @@ func (a *Account) BulkUpload(uploadPath string, format BulkUploadFormat, content
 	req := Request{
 		Method:            "PUT",
 		Body:              contents,
-		Headers:           headersToHTTP(headers),
-		Options:           cloneRequestOptions(opts),
+		Options:           cloneRequestOptions(opts, nil),
 		ExpectStatusCodes: []int{200},
 	}
-	req.Headers.Set("Accept", "application/json")
+	req.Options.Headers.Set("Accept", "application/json")
 	req.Options.Values.Set("extract-archive", string(format))
 
 	fields := strings.SplitN(strings.Trim(uploadPath, "/"), "/", 2)
@@ -134,9 +133,8 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 //	numDeleted, numNotFound, err := container.Account().BulkDelete(
 //	    objects, []*schwift.Container{container}, nil, nil)
 //
-//If the server does not support bulk-deletion, this function will just call
-//Object.Delete() for each given object and Container.Delete() for each given
-//container, and aggregate the result.
+//If the server does not support bulk-deletion, this function falls back to
+//deleting each object and container individually, and aggregates the result.
 //
 //If not nil, the error return value is *usually* an instance of
 //BulkError.
@@ -144,7 +142,7 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 //The objects may be located in multiple containers, but they and the
 //containers must all be located in the given account. (Otherwise,
 //ErrAccountMismatch is returned.)
-func (a *Account) BulkDelete(objects []*Object, containers []*Container, headers AccountHeaders, opts *RequestOptions) (numDeleted int, numNotFound int, deleteError error) {
+func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *RequestOptions) (numDeleted int, numNotFound int, deleteError error) {
 	//validate that all given objects are in this account
 	for _, obj := range objects {
 		other := obj.Container().Account()
@@ -165,7 +163,7 @@ func (a *Account) BulkDelete(objects []*Object, containers []*Container, headers
 		return 0, 0, err
 	}
 	if caps.BulkDelete == nil {
-		return a.bulkDeleteSingle(objects, containers, headers, opts)
+		return a.bulkDeleteSingle(objects, containers, opts)
 	}
 	chunkSize := int(caps.BulkDelete.MaximumDeletesPerRequest)
 
@@ -193,7 +191,7 @@ func (a *Account) BulkDelete(objects []*Object, containers []*Container, headers
 		chunk := names[0:chunkSize]
 		names = names[chunkSize:]
 
-		numDeletedNow, numNotFoundNow, err := a.bulkDelete(chunk, headers, opts)
+		numDeletedNow, numNotFoundNow, err := a.bulkDelete(chunk, opts)
 		numDeleted += numDeletedNow
 		numNotFound += numNotFoundNow
 		if err != nil {
@@ -206,7 +204,7 @@ func (a *Account) BulkDelete(objects []*Object, containers []*Container, headers
 
 //Implementation of BulkDelete() for servers that *do not* support bulk
 //deletion.
-func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, headers AccountHeaders, opts *RequestOptions) (int, int, error) {
+func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, opts *RequestOptions) (int, int, error) {
 	var (
 		numDeleted  = 0
 		numNotFound = 0
@@ -235,7 +233,7 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, h
 	}
 
 	for _, obj := range objects {
-		err := obj.Delete(ObjectHeaders(headers), opts) //this implies Invalidate()
+		err := obj.Delete(opts) //this implies Invalidate()
 		err = handleSingleError(obj.Container().Name(), obj.Name(), err)
 		if err != nil {
 			return numDeleted, numNotFound, err
@@ -243,7 +241,7 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, h
 	}
 
 	for _, container := range containers {
-		err := container.Delete(ContainerHeaders(headers), opts) //this implies Invalidate()
+		err := container.Delete(opts) //this implies Invalidate()
 		err = handleSingleError(container.Name(), "", err)
 		if err != nil {
 			return numDeleted, numNotFound, err
@@ -263,16 +261,15 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, h
 //Implementation of BulkDelete() for servers that *do* support bulk deletion.
 //This function is called *after* chunking, so `len(names) <=
 //account.Capabilities.BulkDelete.MaximumDeletesPerRequest`.
-func (a *Account) bulkDelete(names []string, headers AccountHeaders, opts *RequestOptions) (int, int, error) {
+func (a *Account) bulkDelete(names []string, opts *RequestOptions) (int, int, error) {
 	req := Request{
 		Method:            "DELETE",
 		Body:              strings.NewReader(strings.Join(names, "\n") + "\n"),
-		Headers:           headersToHTTP(headers),
-		Options:           cloneRequestOptions(opts),
+		Options:           cloneRequestOptions(opts, nil),
 		ExpectStatusCodes: []int{200},
 	}
-	req.Headers.Set("Accept", "application/json")
-	req.Headers.Set("Content-Type", "text/plain")
+	req.Options.Headers.Set("Accept", "application/json")
+	req.Options.Headers.Set("Content-Type", "text/plain")
 	req.Options.Values.Set("bulk-delete", "true")
 	resp, err := req.Do(a.backend)
 	if err != nil {

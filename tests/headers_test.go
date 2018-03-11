@@ -26,11 +26,13 @@ import (
 
 func TestParseAccountHeadersSuccess(t *testing.T) {
 	headers := schwift.AccountHeaders{
-		"X-Account-Bytes-Used":       "1234",
-		"X-Account-Object-Count":     "42",
-		"X-Account-Container-Count":  "23",
-		"X-Account-Meta-Quota-Bytes": "1048576",
-		"X-Account-Meta-Foo":         "bar",
+		Headers: schwift.Headers{
+			"X-Account-Bytes-Used":       "1234",
+			"X-Account-Object-Count":     "42",
+			"X-Account-Container-Count":  "23",
+			"X-Account-Meta-Quota-Bytes": "1048576",
+			"X-Account-Meta-Foo":         "bar",
+		},
 	}
 
 	expectSuccess(t, headers.Validate())

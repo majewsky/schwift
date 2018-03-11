@@ -8,38 +8,18 @@
 
 package schwift
 
-import "net/textproto"
-
 //AccountHeaders contains the headers for a schwift.Account instance.
 //
 //To read and write well-known headers, use the methods on this type.
-//To read and write arbitary headers, use the http.Header-like methods Get(),
-//Set(), Clear(), Del().
-type AccountHeaders map[string]string
-
-//Clear sets the value for the specified header to the empty string. When the
-//Headers instance is then sent to the server with Update(), the server will
-//delete the value for that header; cf. Del().
-func (h AccountHeaders) Clear(key string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
+//To read and write arbitary headers, use the methods on the Headers supertype.
+type AccountHeaders struct {
+	Headers
 }
 
-//Del deletes a key from the Headers instance. When the Headers instance is
-//then sent to the server with Update(), a key which has been deleted with
-//Del() will remain unchanged on the server.
-func (h AccountHeaders) Del(key string) {
-	delete(h, textproto.CanonicalMIMEHeaderKey(key))
-}
-
-//Get returns the value for the specified header.
-func (h AccountHeaders) Get(key string) string {
-	return h[textproto.CanonicalMIMEHeaderKey(key)]
-}
-
-//Set sets a new value for the specified header. Any existing value will be
-//overwritten.
-func (h AccountHeaders) Set(key, value string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = value
+//NewAccountHeaders creates a new AccountHeaders instance. The return value
+//will have the Headers attribute initialized to a non-nil map.
+func NewAccountHeaders() AccountHeaders {
+	return AccountHeaders{make(Headers)}
 }
 
 //Validate returns MalformedHeaderError if the value of any well-known header
@@ -77,74 +57,56 @@ func (h AccountHeaders) Validate() error {
 
 //BytesUsed provides type-safe access to X-Account-Bytes-Used headers.
 func (h AccountHeaders) BytesUsed() FieldUint64Readonly {
-	return FieldUint64Readonly{h, "X-Account-Bytes-Used"}
+	return FieldUint64Readonly{h.Headers, "X-Account-Bytes-Used"}
 }
 
 //ContainerCount provides type-safe access to X-Account-Container-Count headers.
 func (h AccountHeaders) ContainerCount() FieldUint64Readonly {
-	return FieldUint64Readonly{h, "X-Account-Container-Count"}
+	return FieldUint64Readonly{h.Headers, "X-Account-Container-Count"}
 }
 
 //Metadata provides type-safe access to X-Account-Meta- headers.
 func (h AccountHeaders) Metadata() FieldMetadata {
-	return FieldMetadata{h, "X-Account-Meta-"}
+	return FieldMetadata{h.Headers, "X-Account-Meta-"}
 }
 
 //BytesUsedQuota provides type-safe access to X-Account-Meta-Quota-Bytes headers.
 func (h AccountHeaders) BytesUsedQuota() FieldUint64 {
-	return FieldUint64{h, "X-Account-Meta-Quota-Bytes"}
+	return FieldUint64{h.Headers, "X-Account-Meta-Quota-Bytes"}
 }
 
 //TempURLKey2 provides type-safe access to X-Account-Meta-Temp-URL-Key-2 headers.
 func (h AccountHeaders) TempURLKey2() FieldString {
-	return FieldString{h, "X-Account-Meta-Temp-URL-Key-2"}
+	return FieldString{h.Headers, "X-Account-Meta-Temp-URL-Key-2"}
 }
 
 //TempURLKey provides type-safe access to X-Account-Meta-Temp-URL-Key headers.
 func (h AccountHeaders) TempURLKey() FieldString {
-	return FieldString{h, "X-Account-Meta-Temp-URL-Key"}
+	return FieldString{h.Headers, "X-Account-Meta-Temp-URL-Key"}
 }
 
 //ObjectCount provides type-safe access to X-Account-Object-Count headers.
 func (h AccountHeaders) ObjectCount() FieldUint64Readonly {
-	return FieldUint64Readonly{h, "X-Account-Object-Count"}
+	return FieldUint64Readonly{h.Headers, "X-Account-Object-Count"}
 }
 
 //CreatedAt provides type-safe access to X-Timestamp headers.
 func (h AccountHeaders) CreatedAt() FieldUnixTimeReadonly {
-	return FieldUnixTimeReadonly{h, "X-Timestamp"}
+	return FieldUnixTimeReadonly{h.Headers, "X-Timestamp"}
 }
 
 //ContainerHeaders contains the headers for a schwift.Container instance.
 //
 //To read and write well-known headers, use the methods on this type.
-//To read and write arbitary headers, use the http.Header-like methods Get(),
-//Set(), Clear(), Del().
-type ContainerHeaders map[string]string
-
-//Clear sets the value for the specified header to the empty string. When the
-//Headers instance is then sent to the server with Update(), the server will
-//delete the value for that header; cf. Del().
-func (h ContainerHeaders) Clear(key string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
+//To read and write arbitary headers, use the methods on the Headers supertype.
+type ContainerHeaders struct {
+	Headers
 }
 
-//Del deletes a key from the Headers instance. When the Headers instance is
-//then sent to the server with Update(), a key which has been deleted with
-//Del() will remain unchanged on the server.
-func (h ContainerHeaders) Del(key string) {
-	delete(h, textproto.CanonicalMIMEHeaderKey(key))
-}
-
-//Get returns the value for the specified header.
-func (h ContainerHeaders) Get(key string) string {
-	return h[textproto.CanonicalMIMEHeaderKey(key)]
-}
-
-//Set sets a new value for the specified header. Any existing value will be
-//overwritten.
-func (h ContainerHeaders) Set(key, value string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = value
+//NewContainerHeaders creates a new ContainerHeaders instance. The return value
+//will have the Headers attribute initialized to a non-nil map.
+func NewContainerHeaders() ContainerHeaders {
+	return ContainerHeaders{make(Headers)}
 }
 
 //Validate returns MalformedHeaderError if the value of any well-known header
@@ -203,117 +165,91 @@ func (h ContainerHeaders) Validate() error {
 
 //BytesUsed provides type-safe access to X-Container-Bytes-Used headers.
 func (h ContainerHeaders) BytesUsed() FieldUint64Readonly {
-	return FieldUint64Readonly{h, "X-Container-Bytes-Used"}
+	return FieldUint64Readonly{h.Headers, "X-Container-Bytes-Used"}
 }
 
 //Metadata provides type-safe access to X-Container-Meta- headers.
 func (h ContainerHeaders) Metadata() FieldMetadata {
-	return FieldMetadata{h, "X-Container-Meta-"}
+	return FieldMetadata{h.Headers, "X-Container-Meta-"}
 }
 
 //BytesUsedQuota provides type-safe access to X-Container-Meta-Quota-Bytes headers.
 func (h ContainerHeaders) BytesUsedQuota() FieldUint64 {
-	return FieldUint64{h, "X-Container-Meta-Quota-Bytes"}
+	return FieldUint64{h.Headers, "X-Container-Meta-Quota-Bytes"}
 }
 
 //ObjectCountQuota provides type-safe access to X-Container-Meta-Quota-Count headers.
 func (h ContainerHeaders) ObjectCountQuota() FieldUint64 {
-	return FieldUint64{h, "X-Container-Meta-Quota-Count"}
+	return FieldUint64{h.Headers, "X-Container-Meta-Quota-Count"}
 }
 
 //TempURLKey2 provides type-safe access to X-Container-Meta-Temp-URL-Key-2 headers.
 func (h ContainerHeaders) TempURLKey2() FieldString {
-	return FieldString{h, "X-Container-Meta-Temp-URL-Key-2"}
+	return FieldString{h.Headers, "X-Container-Meta-Temp-URL-Key-2"}
 }
 
 //TempURLKey provides type-safe access to X-Container-Meta-Temp-URL-Key headers.
 func (h ContainerHeaders) TempURLKey() FieldString {
-	return FieldString{h, "X-Container-Meta-Temp-URL-Key"}
+	return FieldString{h.Headers, "X-Container-Meta-Temp-URL-Key"}
 }
 
 //ObjectCount provides type-safe access to X-Container-Object-Count headers.
 func (h ContainerHeaders) ObjectCount() FieldUint64Readonly {
-	return FieldUint64Readonly{h, "X-Container-Object-Count"}
+	return FieldUint64Readonly{h.Headers, "X-Container-Object-Count"}
 }
 
 //ReadACL provides type-safe access to X-Container-Read headers.
 func (h ContainerHeaders) ReadACL() FieldString {
-	return FieldString{h, "X-Container-Read"}
+	return FieldString{h.Headers, "X-Container-Read"}
 }
 
 //SyncKey provides type-safe access to X-Container-Sync-Key headers.
 func (h ContainerHeaders) SyncKey() FieldString {
-	return FieldString{h, "X-Container-Sync-Key"}
+	return FieldString{h.Headers, "X-Container-Sync-Key"}
 }
 
 //SyncTo provides type-safe access to X-Container-Sync-To headers.
 func (h ContainerHeaders) SyncTo() FieldString {
-	return FieldString{h, "X-Container-Sync-To"}
+	return FieldString{h.Headers, "X-Container-Sync-To"}
 }
 
 //WriteACL provides type-safe access to X-Container-Write headers.
 func (h ContainerHeaders) WriteACL() FieldString {
-	return FieldString{h, "X-Container-Write"}
+	return FieldString{h.Headers, "X-Container-Write"}
 }
 
 //HistoryLocation provides type-safe access to X-History-Location headers.
 func (h ContainerHeaders) HistoryLocation() FieldString {
-	return FieldString{h, "X-History-Location"}
+	return FieldString{h.Headers, "X-History-Location"}
 }
 
 //StoragePolicy provides type-safe access to X-Storage-Policy headers.
 func (h ContainerHeaders) StoragePolicy() FieldString {
-	return FieldString{h, "X-Storage-Policy"}
+	return FieldString{h.Headers, "X-Storage-Policy"}
 }
 
 //CreatedAt provides type-safe access to X-Timestamp headers.
 func (h ContainerHeaders) CreatedAt() FieldUnixTimeReadonly {
-	return FieldUnixTimeReadonly{h, "X-Timestamp"}
+	return FieldUnixTimeReadonly{h.Headers, "X-Timestamp"}
 }
 
 //VersionsLocation provides type-safe access to X-Versions-Location headers.
 func (h ContainerHeaders) VersionsLocation() FieldString {
-	return FieldString{h, "X-Versions-Location"}
+	return FieldString{h.Headers, "X-Versions-Location"}
 }
 
 //ObjectHeaders contains the headers for a schwift.Object instance.
 //
 //To read and write well-known headers, use the methods on this type.
-//To read and write arbitary headers, use the http.Header-like methods Get(),
-//Set(), Clear(), Del().
-type ObjectHeaders map[string]string
-
-//Clear sets the value for the specified header to the empty string. When the
-//Headers instance is then sent to the server with Update(), the server will
-//delete the value for that header; cf. Del().
-func (h ObjectHeaders) Clear(key string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = ""
+//To read and write arbitary headers, use the methods on the Headers supertype.
+type ObjectHeaders struct {
+	Headers
 }
 
-//Del deletes a key from the Headers instance. When the Headers instance
-//is then sent to the server with Update(), Del() has different effects
-//depending on context because of Swift's inconsistent API:
-//
-//For most writable attributes, a key which has been deleted with Del() will
-//remain unchanged on the server. To remove the key on the server, use Clear()
-//instead.
-//
-//For object metadata (but not other object attributes), deleting a key will
-//cause that key to be deleted on the server. Del() is identical to Clear() in
-//this case.
-func (h ObjectHeaders) Del(key string) {
-	delete(h, textproto.CanonicalMIMEHeaderKey(key))
-}
-
-//Get returns the value for the specified header.
-func (h ObjectHeaders) Get(key string) string {
-	return h[textproto.CanonicalMIMEHeaderKey(key)]
-}
-
-//Set sets a new value for the specified header. Any existing value will be
-//overwritten.
-func (h ObjectHeaders) Set(key, value string) {
-	h[textproto.CanonicalMIMEHeaderKey(key)] = value
+//NewObjectHeaders creates a new ObjectHeaders instance. The return value
+//will have the Headers attribute initialized to a non-nil map.
+func NewObjectHeaders() ObjectHeaders {
+	return ObjectHeaders{make(Headers)}
 }
 
 //Validate returns MalformedHeaderError if the value of any well-known header
@@ -360,57 +296,57 @@ func (h ObjectHeaders) Validate() error {
 
 //ContentDisposition provides type-safe access to Content-Disposition headers.
 func (h ObjectHeaders) ContentDisposition() FieldString {
-	return FieldString{h, "Content-Disposition"}
+	return FieldString{h.Headers, "Content-Disposition"}
 }
 
 //ContentEncoding provides type-safe access to Content-Encoding headers.
 func (h ObjectHeaders) ContentEncoding() FieldString {
-	return FieldString{h, "Content-Encoding"}
+	return FieldString{h.Headers, "Content-Encoding"}
 }
 
 //SizeBytes provides type-safe access to Content-Length headers.
 func (h ObjectHeaders) SizeBytes() FieldUint64 {
-	return FieldUint64{h, "Content-Length"}
+	return FieldUint64{h.Headers, "Content-Length"}
 }
 
 //ContentType provides type-safe access to Content-Type headers.
 func (h ObjectHeaders) ContentType() FieldString {
-	return FieldString{h, "Content-Type"}
+	return FieldString{h.Headers, "Content-Type"}
 }
 
 //Etag provides type-safe access to Etag headers.
 func (h ObjectHeaders) Etag() FieldString {
-	return FieldString{h, "Etag"}
+	return FieldString{h.Headers, "Etag"}
 }
 
 //UpdatedAt provides type-safe access to Last-Modified headers.
 func (h ObjectHeaders) UpdatedAt() FieldHTTPTimeReadonly {
-	return FieldHTTPTimeReadonly{h, "Last-Modified"}
+	return FieldHTTPTimeReadonly{h.Headers, "Last-Modified"}
 }
 
 //ExpiresAt provides type-safe access to X-Delete-At headers.
 func (h ObjectHeaders) ExpiresAt() FieldUnixTime {
-	return FieldUnixTime{h, "X-Delete-At"}
+	return FieldUnixTime{h.Headers, "X-Delete-At"}
 }
 
 //Metadata provides type-safe access to X-Object-Meta- headers.
 func (h ObjectHeaders) Metadata() FieldMetadata {
-	return FieldMetadata{h, "X-Object-Meta-"}
+	return FieldMetadata{h.Headers, "X-Object-Meta-"}
 }
 
 //SymlinkTargetAccount provides type-safe access to X-Symlink-Target-Account headers.
 func (h ObjectHeaders) SymlinkTargetAccount() FieldString {
-	return FieldString{h, "X-Symlink-Target-Account"}
+	return FieldString{h.Headers, "X-Symlink-Target-Account"}
 }
 
 //SymlinkTarget provides type-safe access to X-Symlink-Target headers.
 func (h ObjectHeaders) SymlinkTarget() FieldString {
-	return FieldString{h, "X-Symlink-Target"}
+	return FieldString{h.Headers, "X-Symlink-Target"}
 }
 
 //CreatedAt provides type-safe access to X-Timestamp headers.
 func (h ObjectHeaders) CreatedAt() FieldUnixTimeReadonly {
-	return FieldUnixTimeReadonly{h, "X-Timestamp"}
+	return FieldUnixTimeReadonly{h.Headers, "X-Timestamp"}
 }
 
 func evadeGolintComplaint1() error {

@@ -40,7 +40,7 @@ func TestBulkUploadSuccess(t *testing.T) {
 			"", //upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),
-			nil, nil,
+			nil,
 		)
 		expectInt(t, n, 2)
 		expectSuccess(t, err)
@@ -58,7 +58,7 @@ func TestBulkUploadArchiveError(t *testing.T) {
 			c.Name(), //upload path
 			schwift.BulkUploadTar,
 			strings.NewReader("This is not the TAR archive you're looking for."),
-			nil, nil,
+			nil,
 		)
 		expectInt(t, n, 0)
 		expectError(t, err, "400 Bad Request: Invalid Tar File: truncated header")
@@ -83,7 +83,7 @@ func TestBulkUploadObjectError(t *testing.T) {
 			c.Name(), //upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),
-			nil, nil,
+			nil,
 		)
 		expectInt(t, n, 1)
 		expectError(t, err, "400 Bad Request (+1 object errors)")

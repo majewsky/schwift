@@ -99,9 +99,9 @@ func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
 		expectSuccess(t, err)
 		if exists {
 			expectSuccess(t, container.Objects().Foreach(func(o *schwift.Object) error {
-				return o.Delete(nil, nil)
+				return o.Delete(nil)
 			}))
-			err = container.Delete(nil, nil)
+			err = container.Delete(nil)
 			expectSuccess(t, err)
 		}
 	})

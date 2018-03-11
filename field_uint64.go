@@ -26,12 +26,12 @@ import (
 //whose value is an unsigned integer. It cannot be directly constructed, but
 //methods on the Headers types return this type. For example:
 //
-//    hdr := make(AccountHeaders)
-//    //the following two statements are equivalent:
-//    hdr["X-Account-Meta-Quota-Bytes"] = "1048576"
-//    hdr.QuotaBytes().Set(1 << 20)
+//	hdr := NewAccountHeaders()
+//	//the following two statements are equivalent:
+//	hdr["X-Account-Meta-Quota-Bytes"] = "1048576"
+//	hdr.BytesUsedQuota().Set(1 << 20)
 type FieldUint64 struct {
-	h headerInterface
+	h Headers
 	k string
 }
 
@@ -85,7 +85,7 @@ func (f FieldUint64) validate() error {
 //FieldUint64Readonly is a readonly variant of FieldUint64. It is used for
 //fields that cannot be set by the client.
 type FieldUint64Readonly struct {
-	h headerInterface
+	h Headers
 	k string
 }
 

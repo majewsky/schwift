@@ -30,28 +30,26 @@ import (
 //	var obj *swift.Object
 //
 //	//Do NOT do this!
-//	reader, err := obj.Download(nil, nil).AsReadCloser()
+//	reader, err := obj.Download(nil).AsReadCloser()
 //	bytes, err := ioutil.ReadAll(reader)
 //	err := reader.Close()
 //	str := string(bytes)
 //
 //	//Do this instead:
-//	str, err := obj.Download(nil, nil).AsString()
+//	str, err := obj.Download(nil).AsString()
 //
-//Since the AsByteSlice and AsString method consume only the unread portion of
-//the ReadCloser, and since they drain the ReadCloser irreversibly, the
-//idiomatic way of using DownloadedObject is to call one of its members
-//immediately, without storing the DownloadedObject instance in a variable
-//first.
+//Since all methods on DownloadedObject are irreversible, the idiomatic way of
+//using DownloadedObject is to call one of its members immediately, without
+//storing the DownloadedObject instance in a variable first.
 //
 //	var obj *swift.Object
 //
 //	//Do NOT do this!
-//	downloaded := obj.Download(nil, nil)
+//	downloaded := obj.Download(nil)
 //	reader, err := downloaded.AsReadCloser()
 //
 //	//Do this instead:
-//	reader, err := obj.Download(nil, nil).AsReadCloser()
+//	reader, err := obj.Download(nil).AsReadCloser()
 type DownloadedObject struct {
 	r   io.ReadCloser
 	err error

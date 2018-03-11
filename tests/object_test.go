@@ -47,15 +47,15 @@ func TestObjectLifecycle(t *testing.T) {
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
-		err = o.Delete(nil, nil)
+		err = o.Delete(nil)
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
-		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
+		err = o.Upload(bytes.NewReader([]byte("test")), nil)
 		expectSuccess(t, err)
 
 		expectObjectExistence(t, o, true)
 
-		err = o.Delete(nil, nil)
+		err = o.Delete(nil)
 		expectSuccess(t, err)
 	})
 }
@@ -65,25 +65,25 @@ func TestObjectUpload(t *testing.T) {
 
 		//test upload with bytes.Reader
 		obj := c.Object("upload1")
-		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
+		err := obj.Upload(bytes.NewReader(objectExampleContent), nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with bytes.Buffer
 		obj = c.Object("upload2")
-		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil, nil)
+		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with opaque io.Reader
 		obj = c.Object("upload3")
-		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil, nil)
+		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with io.Writer
 		obj = c.Object("upload4")
-		err = obj.UploadWithWriter(nil, nil, func(w io.Writer) error {
+		err = obj.UploadWithWriter(nil, func(w io.Writer) error {
 			_, err := w.Write(objectExampleContent)
 			return err
 		})
@@ -92,13 +92,13 @@ func TestObjectUpload(t *testing.T) {
 
 		//test upload with empty reader (should create zero-byte-sized object)
 		obj = c.Object("upload5")
-		err = obj.Upload(eofReader{}, nil, nil)
+		err = obj.Upload(eofReader{}, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 
 		//test upload without reader (should create zero-byte-sized object)
 		obj = c.Object("upload6")
-		err = obj.Upload(nil, nil, nil)
+		err = obj.Upload(nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 	})
@@ -122,21 +122,21 @@ func TestObjectDownload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		//upload example object
 		obj := c.Object("example")
-		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
+		err := obj.Upload(bytes.NewReader(objectExampleContent), nil)
 		expectSuccess(t, err)
 
 		//test download as string
-		str, err := obj.Download(nil, nil).AsString()
+		str, err := obj.Download(nil).AsString()
 		expectSuccess(t, err)
 		expectString(t, str, string(objectExampleContent))
 
 		//test download as byte slice
-		buf, err := obj.Download(nil, nil).AsByteSlice()
+		buf, err := obj.Download(nil).AsByteSlice()
 		expectSuccess(t, err)
 		expectString(t, string(buf), string(objectExampleContent))
 
 		//test download as io.ReadCloser slice
-		reader, err := obj.Download(nil, nil).AsReadCloser()
+		reader, err := obj.Download(nil).AsReadCloser()
 		expectSuccess(t, err)
 		buf = make([]byte, 4)
 		_, err = reader.Read(buf)
@@ -156,14 +156,14 @@ func TestObjectUpdate(t *testing.T) {
 		obj := c.Object("example")
 
 		//test that metadata update fails for non-existing object
-		newHeaders := make(schwift.ObjectHeaders)
+		newHeaders := schwift.NewObjectHeaders()
 		newHeaders.ContentType().Set("application/json")
 		err := obj.Update(newHeaders, nil)
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectError(t, err, "expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		//create object
-		err = obj.Upload(nil, nil, nil)
+		err = obj.Upload(nil, nil)
 		expectSuccess(t, err)
 
 		hdr, err := obj.Headers()
@@ -183,12 +183,12 @@ func TestObjectUpdate(t *testing.T) {
 func TestObjectCopyMove(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj1 := c.Object("location1")
-		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
+		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil)
 		expectSuccess(t, err)
 		expectObjectExistence(t, obj1, true)
 
 		obj2 := c.Object("location2")
-		expectSuccess(t, obj1.CopyTo(obj2, nil, nil))
+		expectSuccess(t, obj1.CopyTo(obj2, nil))
 		expectObjectExistence(t, obj1, true)
 		expectObjectExistence(t, obj2, true)
 		expectObjectContent(t, obj2, objectExampleContent)
@@ -212,7 +212,7 @@ func expectObjectExistence(t *testing.T, obj *schwift.Object, expectedExists boo
 
 func expectObjectContent(t *testing.T, obj *schwift.Object, expected []byte) {
 	t.Helper()
-	str, err := obj.Download(nil, nil).AsString()
+	str, err := obj.Download(nil).AsString()
 	expectSuccess(t, err)
 	expectString(t, str, string(expected))
 	obj.Invalidate()
