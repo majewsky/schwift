@@ -203,19 +203,30 @@ func (o *Object) Upload(content io.Reader, opts *RequestOptions) error {
 	return nil
 }
 
-//TODO add support for strings.Reader below
+type readerWithLen interface {
+	//Returns the number of bytes in the unread portion of the buffer.
+	//Implemented by bytes.Reader, bytes.Buffer and strings.Reader.
+	Len() int
+}
 
 func tryComputeContentLength(content io.Reader, headers ObjectHeaders) {
 	h := headers.SizeBytes()
 	if h.Exists() {
 		return
 	}
-	switch r := content.(type) {
-	case *bytes.Buffer:
-		h.Set(uint64(r.Len()))
-	case *bytes.Reader:
+
+	if content == nil {
+		h.Set(0)
+	} else if r, ok := content.(readerWithLen); ok {
 		h.Set(uint64(r.Len()))
 	}
+}
+
+//This covers both bytes.Reader and strings.Reader in a way that is compatible
+//with earlier versions of Go that don't have strings.Reader yet.
+type likeBytesReader interface {
+	io.WriterTo
+	io.Seeker
 }
 
 func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
@@ -224,12 +235,15 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 		return
 	}
 	switch r := content.(type) {
+	case nil:
+		sum := md5.Sum(nil)
+		h.Set(hex.EncodeToString(sum[:]))
 	case *bytes.Buffer:
 		//bytes.Buffer has a method that returns the unread portion of the buffer,
 		//so this one is easy
 		sum := md5.Sum(r.Bytes())
 		h.Set(hex.EncodeToString(sum[:]))
-	case *bytes.Reader:
+	case likeBytesReader:
 		//bytes.Reader does not have such a method, but it is an io.Seeker, so we
 		//can read the entire thing and then seek back to where we started
 		hash := md5.New()

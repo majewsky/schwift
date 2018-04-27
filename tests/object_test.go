@@ -23,6 +23,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/majewsky/schwift"
@@ -75,14 +76,20 @@ func TestObjectUpload(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with opaque io.Reader
+		//test upload with strings.Reader
 		obj = c.Object("upload3")
+		err = obj.Upload(strings.NewReader(string(objectExampleContent)), nil)
+		expectSuccess(t, err)
+		expectObjectContent(t, obj, objectExampleContent)
+
+		//test upload with opaque io.Reader
+		obj = c.Object("upload4")
 		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with io.Writer
-		obj = c.Object("upload4")
+		obj = c.Object("upload5")
 		err = obj.UploadWithWriter(nil, func(w io.Writer) error {
 			_, err := w.Write(objectExampleContent)
 			return err
@@ -91,13 +98,13 @@ func TestObjectUpload(t *testing.T) {
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with empty reader (should create zero-byte-sized object)
-		obj = c.Object("upload5")
+		obj = c.Object("upload6")
 		err = obj.Upload(eofReader{}, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 
 		//test upload without reader (should create zero-byte-sized object)
-		obj = c.Object("upload6")
+		obj = c.Object("upload7")
 		err = obj.Upload(nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
