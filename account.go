@@ -58,7 +58,7 @@ func InitializeAccount(backend Backend) (*Account, error) {
 //you originally authenticated. This method does not check whether the account
 //actually exists.
 //
-//The account name is usually the project name with an additional "AUTH_"
+//The account name is usually the Keystone project ID with an additional "AUTH_"
 //prefix.
 func (a *Account) SwitchAccount(accountName string) *Account {
 	newEndpointURL := a.baseURL + "v1/" + accountName + "/"
@@ -70,7 +70,7 @@ func (a *Account) SwitchAccount(accountName string) *Account {
 }
 
 //Name returns the name of the account (usually the prefix "AUTH_" followed by
-//the project ID).
+//the Keystone project ID).
 func (a *Account) Name() string {
 	return a.name
 }
