@@ -32,9 +32,11 @@ func TestAccountBasic(t *testing.T) {
 		}
 		//There are not a lot of things we can test here (besides testing that
 		//Headers() does not fail, i.e. everything parses correctly), but
-		//Content-Type is going to be text/plain because GET on an account lists
-		//the container names as plain text.
-		expectString(t, hdr.Get("Content-Type"), "text/plain; charset=utf-8")
+		//Content-Type is going to be either application/json or text/plain because
+		//GET on an account lists the container names as plain text or JSON.
+		if hdr.Get("Content-Type") != "application/json; charset=utf-8" {
+			expectString(t, hdr.Get("Content-Type"), "text/plain; charset=utf-8")
+		}
 	})
 }
 
