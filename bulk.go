@@ -145,14 +145,12 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *RequestOptions) (numDeleted int, numNotFound int, deleteError error) {
 	//validate that all given objects are in this account
 	for _, obj := range objects {
-		other := obj.Container().Account()
-		if other.baseURL != a.baseURL || other.name != a.name {
+		if !a.isEqualTo(obj.Container().Account()) {
 			return 0, 0, ErrAccountMismatch
 		}
 	}
 	for _, container := range containers {
-		other := container.Account()
-		if other.baseURL != a.baseURL || other.name != a.name {
+		if !a.isEqualTo(container.Account()) {
 			return 0, 0, ErrAccountMismatch
 		}
 	}

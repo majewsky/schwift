@@ -30,6 +30,10 @@ type Container struct {
 	headers *ContainerHeaders
 }
 
+func (c *Container) isEqualTo(other *Container) bool {
+	return other.name == c.name && other.a.isEqualTo(c.a)
+}
+
 //Container returns a handle to the container with the given name within this
 //account. This function does not issue any HTTP requests, and therefore cannot
 //ensure that the container exists. Use the Exists() function to check for the

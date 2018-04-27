@@ -36,6 +36,10 @@ type Account struct {
 	caps    *Capabilities
 }
 
+func (a *Account) isEqualTo(other *Account) bool {
+	return other.baseURL == a.baseURL && other.name == a.name
+}
+
 var endpointURLRegexp = regexp.MustCompile(`^(.*/)v1/(.*)/$`)
 
 //InitializeAccount takes something that implements the Backend interface, and
