@@ -24,8 +24,6 @@ import (
 
 //Backend is the interface between Schwift and the libraries providing
 //authentication for it.
-//
-//TODO list implementations
 type Backend interface {
 	//EndpointURL returns the endpoint URL from the Keystone catalog for the
 	//Swift account that this backend operates on. It should look like

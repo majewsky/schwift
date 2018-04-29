@@ -25,13 +25,18 @@ you can use the Wrap() function in this package as an entrypoint to Schwift.
 A schwift.Account created this way will re-use Gophercloud's authentication code,
 so you only need to obtain a client token once using Gophercloud. For example:
 
-	authOptions, err := openstack.AuthOptionsFromEnv() // or build a gophercloud.AuthOptions instance yourself
-	provider, err := openstack.AuthenticatedClient(authOptions)
-	client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
+	import (
+		"github.com/gophercloud/gophercloud/openstack"
+		"github.com/gophercloud/utils/openstack/clientconfig"
+		"github.com/majewsky/schwift/gopherschwift"
+	)
 
-  account, err := gopherschwift.Wrap(client)
+	provider, err := clientconfig.AuthenticatedClient(nil)
+	client, err := openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
+	account, err := gopherschwift.Wrap(client)
 
 Using this schwift.Account instance, you have access to all of schwift's API.
+Refer to the documentation in the parent package for details.
 
 */
 package gopherschwift
