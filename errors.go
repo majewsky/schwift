@@ -43,6 +43,17 @@ var (
 	//objects as arguments, if (some of) the provided objects are located in a
 	//different account.
 	ErrAccountMismatch = errors.New("some of the given objects are not in this account")
+	//ErrContainerMismatch is returned by operations on a container that accept
+	//objects as arguments, if (some of) the provided objects are located in a
+	//different container.
+	ErrContainerMismatch = errors.New("some of the given objects are not in this container")
+	//ErrNotLarge is returned by Object.AsLargeObject() if the object exists, but
+	//is not a large object that is composed out of segments.
+	ErrNotLarge = errors.New("not a large object")
+	//ErrSegmentInvalid is returned by LargeObject.AddSegment() if the segment
+	//provided is malformed or uses features not supported by the LargeObject's
+	//strategy. See documentation for LargeObject.AddSegment() for details.
+	ErrSegmentInvalid = errors.New("segment invalid or incompatible with large object strategy")
 )
 
 //UnexpectedStatusCodeError is generated when a request to Swift does not yield

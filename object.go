@@ -167,15 +167,23 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 func (o *Object) Upload(content io.Reader, opts *RequestOptions) error {
 	opts = cloneRequestOptions(opts, nil)
 	hdr := ObjectHeaders{opts.Headers}
-	tryComputeContentLength(content, hdr)
-	tryComputeEtag(content, hdr)
 
-	//could not compute Etag in advance -> need to check on the fly
+	//do not attempt to add the Etag header when we're writing a large object
+	//manifest; the header refers to the content, but we would be computing the
+	//manifest's hash instead
+	isManifestUpload := opts.Values.Get("multipart-manifest") == "put" || hdr.IsDynamicLargeObject()
+
 	var hasher hash.Hash
-	if !hdr.Etag().Exists() {
-		hasher = md5.New()
-		if content != nil {
-			content = io.TeeReader(content, hasher)
+	tryComputeContentLength(content, hdr)
+	if !isManifestUpload {
+		tryComputeEtag(content, hdr)
+
+		//could not compute Etag in advance -> need to check on the fly
+		if !hdr.Etag().Exists() {
+			hasher = md5.New()
+			if content != nil {
+				content = io.TeeReader(content, hasher)
+			}
 		}
 	}
 

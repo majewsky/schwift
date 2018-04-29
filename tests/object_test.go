@@ -225,5 +225,7 @@ func expectObjectContent(t *testing.T, obj *schwift.Object, expected []byte) {
 	obj.Invalidate()
 	hdr, err := obj.Headers()
 	expectSuccess(t, err)
-	expectString(t, hdr.Etag().Get(), etagOf(expected))
+	if !hdr.IsLargeObject() {
+		expectString(t, hdr.Etag().Get(), etagOf(expected))
+	}
 }

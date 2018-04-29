@@ -114,6 +114,10 @@ func etagOf(buf []byte) string {
 	return hex.EncodeToString(hash[:])
 }
 
+func etagOfString(buf string) string {
+	return etagOf([]byte(buf))
+}
+
 func getRandomName() string {
 	var buf [16]byte
 	_, err := rand.Read(buf[:])
@@ -121,6 +125,15 @@ func getRandomName() string {
 		panic(err.Error())
 	}
 	return hex.EncodeToString(buf[:])
+}
+
+func getRandomSegmentContent(length int) string {
+	buf := make([]byte, length/2)
+	_, err := rand.Read(buf)
+	if err != nil {
+		panic(err.Error())
+	}
+	return hex.EncodeToString(buf)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

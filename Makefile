@@ -23,11 +23,23 @@ static-tests: FORCE
 	@echo '>> govet...'
 	@go vet ./...
 
-cover.out: FORCE
+PKG = github.com/majewsky/schwift
+TESTPKGS = $(PKG) $(PKG)/tests          # space-separated list of packages containing tests
+COVERPKGS = $(PKG),$(PKG)/gopherschwift # comma-separated list of packages for which to measure coverage
+
+cover.out.%: FORCE
 	@echo '>> go test...'
-	@go test -covermode count -coverpkg github.com/majewsky/schwift/... -coverprofile $@ github.com/majewsky/schwift/tests
+	go test -covermode count -coverpkg $(COVERPKGS) -coverprofile $@ $(subst _,/,$*)
+cover.out: $(addprefix cover.out.,$(subst /,_,$(TESTPKGS)))
+	util/gocovcat.go $^ > $@
 cover.html: cover.out
 	@echo '>> rendering cover.html...'
 	@go tool cover -html=$< -o $@
+
+################################################################################
+
+# vendoring by https://github.com/holocm/golangvend
+vendor: FORCE
+	@golangvend
 
 .PHONY: FORCE
