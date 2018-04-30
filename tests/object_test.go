@@ -51,7 +51,7 @@ func TestObjectLifecycle(t *testing.T) {
 		err = o.Delete(nil, nil)
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
-		err = o.Upload(bytes.NewReader([]byte("test")), nil)
+		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
 		expectSuccess(t, err)
 
 		expectObjectExistence(t, o, true)
@@ -66,31 +66,31 @@ func TestObjectUpload(t *testing.T) {
 
 		//test upload with bytes.Reader
 		obj := c.Object("upload1")
-		err := obj.Upload(bytes.NewReader(objectExampleContent), nil)
+		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with bytes.Buffer
 		obj = c.Object("upload2")
-		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil)
+		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with strings.Reader
 		obj = c.Object("upload3")
-		err = obj.Upload(strings.NewReader(string(objectExampleContent)), nil)
+		err = obj.Upload(strings.NewReader(string(objectExampleContent)), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with opaque io.Reader
 		obj = c.Object("upload4")
-		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil)
+		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
 		//test upload with io.Writer
 		obj = c.Object("upload5")
-		err = obj.UploadWithWriter(nil, func(w io.Writer) error {
+		err = obj.UploadWithWriter(nil, nil, func(w io.Writer) error {
 			_, err := w.Write(objectExampleContent)
 			return err
 		})
@@ -99,13 +99,13 @@ func TestObjectUpload(t *testing.T) {
 
 		//test upload with empty reader (should create zero-byte-sized object)
 		obj = c.Object("upload6")
-		err = obj.Upload(eofReader{}, nil)
+		err = obj.Upload(eofReader{}, nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 
 		//test upload without reader (should create zero-byte-sized object)
 		obj = c.Object("upload7")
-		err = obj.Upload(nil, nil)
+		err = obj.Upload(nil, nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 	})
@@ -129,7 +129,7 @@ func TestObjectDownload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		//upload example object
 		obj := c.Object("example")
-		err := obj.Upload(bytes.NewReader(objectExampleContent), nil)
+		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 
 		//test download as string
@@ -170,7 +170,7 @@ func TestObjectUpdate(t *testing.T) {
 		expectError(t, err, "expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		//create object
-		err = obj.Upload(nil, nil)
+		err = obj.Upload(nil, nil, nil)
 		expectSuccess(t, err)
 
 		hdr, err := obj.Headers()
@@ -190,7 +190,7 @@ func TestObjectUpdate(t *testing.T) {
 func TestObjectCopyMove(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj1 := c.Object("location1")
-		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil)
+		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectExistence(t, obj1, true)
 

@@ -77,7 +77,7 @@ func createTestObjects(c *schwift.Container) ([]*schwift.Object, error) {
 	var objs []*schwift.Object
 	for idx := 1; idx <= 5; idx++ {
 		obj := c.Object(fmt.Sprintf("object%d", idx))
-		err := obj.Upload(strings.NewReader("example"), nil)
+		err := obj.Upload(strings.NewReader("example"), nil, nil)
 		if err != nil {
 			return nil, err
 		}

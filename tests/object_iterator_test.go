@@ -39,7 +39,7 @@ func TestObjectIterator(t *testing.T) {
 		for idx := 1; idx <= 4; idx++ {
 			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
-			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), hdr.ToOpts())
+			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
 			expectSuccess(t, err)
 		}
 

@@ -88,7 +88,7 @@ func TestFieldTimestamp(t *testing.T) {
 func TestFieldHTTPTimestamp(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj := c.Object("test")
-		err := obj.Upload(nil, nil)
+		err := obj.Upload(nil, nil, nil)
 		if !expectSuccess(t, err) {
 			return
 		}

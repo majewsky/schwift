@@ -18,7 +18,11 @@
 
 package schwift
 
-import "testing"
+import (
+	"bytes"
+	"io/ioutil"
+	"testing"
+)
 
 func TestParseHTTPRange(t *testing.T) {
 	testCases := []struct {
@@ -59,6 +63,50 @@ func TestParseHTTPRange(t *testing.T) {
 		if o != tc.offset || l != tc.length {
 			t.Errorf("expected %q to parse as (%d, %d), but (%d, %d)",
 				tc.input, tc.offset, tc.length, o, l)
+		}
+	}
+}
+
+func TestSegmentingReader(t *testing.T) {
+	testCases := []struct {
+		input    string
+		segments []string
+	}{
+		{"abcdefghi", []string{"abc", "def", "ghi"}},
+		{"abcdefgh", []string{"abc", "def", "gh"}},
+		{"abcdefg", []string{"abc", "def", "g"}},
+	}
+
+	for _, tc := range testCases {
+		sr := segmentingReader{
+			Reader:           bytes.NewReader([]byte(tc.input)),
+			SegmentSizeBytes: 3,
+		}
+
+		for _, expected := range tc.segments {
+			segment := sr.NextSegment()
+			if segment == nil {
+				t.Errorf("expected segment %q, but NextSegment() returned nil", expected)
+				break
+			}
+			actual, err := ioutil.ReadAll(segment)
+			if err != nil {
+				t.Errorf("expected segment %q, but got read error %q", expected, err.Error())
+				break
+			}
+			if string(actual) != expected {
+				t.Errorf("expected segment %q, but got %q", expected, string(actual))
+			}
+		}
+
+		segment := sr.NextSegment()
+		if segment != nil {
+			actual, err := ioutil.ReadAll(segment)
+			if err == nil {
+				t.Errorf("expected no more segments, but got segment producing read error %q", err.Error())
+			} else {
+				t.Errorf("expected no more segments, but got %q", string(actual))
+			}
 		}
 	}
 }
