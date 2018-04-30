@@ -300,6 +300,77 @@ func TestSLOGuessSegmentPrefix(t *testing.T) {
 	})
 }
 
+func TestDeleteLargeObjectAndKeepSegments(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+
+			//setup phase: create an SLO
+			lo, err := obj.AsLargeObject()
+			expectSuccess(t, err)
+			lo.SegmentContainer = c
+			lo.SegmentPrefix = "foo/bar/baz/"
+			w, err := lo.Open(schwift.OpenTruncate)
+			expectSuccess(t, err)
+
+			segment1 := getRandomSegmentContent(128)
+			segment2 := getRandomSegmentContent(128)
+			_, err = w.Write([]byte(segment1))
+			expectSuccess(t, err)
+			_, err = w.Write([]byte(segment2))
+			expectSuccess(t, err)
+			expectSuccess(t, w.Close())
+
+			//test deletion that keeps segments
+			expectSuccess(t, obj.Delete(nil, nil))
+
+			iter := c.Objects()
+			iter.Prefix = lo.SegmentPrefix
+			names, err := iter.Collect()
+			expectSuccess(t, err)
+			expectObjectNames(t, names,
+				"foo/bar/baz/0000000000000001",
+				"foo/bar/baz/0000000000000002")
+		})
+	})
+}
+
+func TestDeleteLargeObjectIncludingSegments(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+
+			//setup phase: create an SLO
+			lo, err := obj.AsLargeObject()
+			expectSuccess(t, err)
+			lo.SegmentContainer = c
+			lo.SegmentPrefix = "foo/bar/baz/"
+			w, err := lo.Open(schwift.OpenTruncate)
+			expectSuccess(t, err)
+
+			segment1 := getRandomSegmentContent(128)
+			segment2 := getRandomSegmentContent(128)
+			_, err = w.Write([]byte(segment1))
+			expectSuccess(t, err)
+			_, err = w.Write([]byte(segment2))
+			expectSuccess(t, err)
+			expectSuccess(t, w.Close())
+
+			//test deletion that keeps segments
+			expectSuccess(t, obj.Delete(&schwift.DeleteOptions{DeleteSegments: true}, nil))
+
+			iter := c.Objects()
+			iter.Prefix = lo.SegmentPrefix
+			names, err := iter.Collect()
+			expectSuccess(t, err)
+			expectObjectNames(t, names)
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// helpers
+
 func expectLargeObject(t *testing.T, obj *schwift.Object, expected []schwift.SegmentInfo) {
 	t.Helper()
 	expectObjectExistence(t, obj, true)

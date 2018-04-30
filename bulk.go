@@ -231,7 +231,7 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, o
 	}
 
 	for _, obj := range objects {
-		err := obj.Delete(opts) //this implies Invalidate()
+		err := obj.Delete(nil, opts) //this implies Invalidate()
 		err = handleSingleError(obj.Container().Name(), obj.Name(), err)
 		if err != nil {
 			return numDeleted, numNotFound, err

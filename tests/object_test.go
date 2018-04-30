@@ -48,7 +48,7 @@ func TestObjectLifecycle(t *testing.T) {
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
-		err = o.Delete(nil)
+		err = o.Delete(nil, nil)
 		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
 
 		err = o.Upload(bytes.NewReader([]byte("test")), nil)
@@ -56,7 +56,7 @@ func TestObjectLifecycle(t *testing.T) {
 
 		expectObjectExistence(t, o, true)
 
-		err = o.Delete(nil)
+		err = o.Delete(nil, nil)
 		expectSuccess(t, err)
 	})
 }

@@ -292,22 +292,54 @@ func (o *Object) UploadWithWriter(opts *RequestOptions, callback func(io.Writer)
 	return <-errChan
 }
 
+//DeleteOptions invokes advanced behavior in the Object.Delete() method.
+type DeleteOptions struct {
+	//When deleting a large object, also delete its segments. This will cause
+	//Delete() to call into BulkDelete(), so a BulkError may be returned.
+	DeleteSegments bool
+}
+
 //Delete deletes the object using a DELETE request. To add URL parameters,
 //pass a non-nil *RequestOptions.
 //
 //This operation fails with http.StatusNotFound if the object does not exist.
 //
 //A successful DELETE request implies Invalidate().
-func (o *Object) Delete(opts *RequestOptions) error {
+func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
+	if opts == nil {
+		opts = &DeleteOptions{}
+	}
+	if opts.DeleteSegments {
+		exists, err := o.Exists()
+		if err != nil {
+			return err
+		}
+		if exists {
+			lo, err := o.AsLargeObject()
+			switch err {
+			case nil:
+				//is large object - delete segments and the object itself in one step
+				_, _, err := o.c.a.BulkDelete(append(lo.segmentObjects(), o), nil, nil)
+				o.Invalidate()
+				return err
+			case ErrNotLarge:
+				//not a large object - use regular DELETE request
+			default:
+				//unexpected error
+				return err
+			}
+		}
+	}
+
 	_, err := Request{
 		Method:            "DELETE",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Options:           opts,
+		Options:           ropts,
 		ExpectStatusCodes: []int{204},
 	}.Do(o.c.a.backend)
 	if err == nil {
-		o.c.Invalidate()
+		o.Invalidate()
 	}
 	return err
 }
@@ -393,5 +425,5 @@ func (o *Object) MoveTo(target *Object, copyOpts *RequestOptions, deleteOpts *Re
 	if err != nil {
 		return err
 	}
-	return o.Delete(deleteOpts)
+	return o.Delete(nil, deleteOpts)
 }

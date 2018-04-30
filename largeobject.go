@@ -349,11 +349,7 @@ func (lo *LargeObject) Open(mode LargeObjectOpenMode) (io.WriteCloser, error) {
 
 	if mode&OpenAppend == 0 {
 		if mode&OpenKeepSegments == 0 {
-			segmentObjects := make([]*Object, len(lo.segments))
-			for idx, segment := range lo.segments {
-				segmentObjects[idx] = segment.Object
-			}
-			_, _, err := lo.Object.c.a.BulkDelete(segmentObjects, nil, nil)
+			_, _, err := lo.Object.c.a.BulkDelete(lo.segmentObjects(), nil, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -369,6 +365,23 @@ func (lo *LargeObject) Segments() ([]SegmentInfo, error) {
 	//NOTE: This method has an error return value because we might later switch
 	//to loading segments lazily inside this method.
 	return lo.segments, nil
+}
+
+func (lo *LargeObject) segmentObjects() []*Object {
+	seen := make(map[string]bool)
+	result := make([]*Object, 0, len(lo.segments))
+	for _, segment := range lo.segments {
+		if segment.Object == nil { //can happen because of data segments
+			continue
+		}
+		fullName := segment.Object.FullName()
+		if !seen[fullName] {
+			result = append(result, segment.Object)
+		}
+		seen[fullName] = true
+	}
+
+	return result
 }
 
 //NextSegmentObject suggests where to upload the next segment.
