@@ -425,6 +425,12 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 	return DownloadedObject{body, err}
 }
 
+//CopyOptions invokes advanced behavior in the Object.Copy() method.
+//
+//It's empty right now, but has been added providently to make future expansion
+//backwards-compatible.
+type CopyOptions struct{}
+
 //CopyTo copies the object on the server side using a COPY request. To copy
 //only the content, not the metadata, use the X-Fresh-Metadata header:
 //
@@ -438,18 +444,18 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 //
 //A successful COPY implies target.Invalidate() since it may change the
 //target's metadata.
-func (o *Object) CopyTo(target *Object, opts *RequestOptions) error {
-	opts = cloneRequestOptions(opts, nil)
-	opts.Headers.Set("Destination", target.FullName())
+func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions) error {
+	ropts = cloneRequestOptions(ropts, nil)
+	ropts.Headers.Set("Destination", target.FullName())
 	if o.c.a.name != target.c.a.name {
-		opts.Headers.Set("Destination-Account", target.c.a.name)
+		ropts.Headers.Set("Destination-Account", target.c.a.name)
 	}
 
 	_, err := Request{
 		Method:            "COPY",
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
-		Options:           opts,
+		Options:           ropts,
 		ExpectStatusCodes: []int{201},
 		DrainResponseBody: true,
 	}.Do(o.c.a.backend)
