@@ -458,15 +458,3 @@ func (o *Object) CopyTo(target *Object, opts *RequestOptions) error {
 	}
 	return err
 }
-
-//MoveTo moves the object on the server side, using a COPY request followed by
-//a DELETE request on the source object.
-//
-//A successful move implies Invalidate() on both the source and target side.
-func (o *Object) MoveTo(target *Object, copyOpts *RequestOptions, deleteOpts *RequestOptions) error {
-	err := o.CopyTo(target, copyOpts)
-	if err != nil {
-		return err
-	}
-	return o.Delete(nil, deleteOpts)
-}

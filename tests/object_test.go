@@ -199,13 +199,6 @@ func TestObjectCopyMove(t *testing.T) {
 		expectObjectExistence(t, obj1, true)
 		expectObjectExistence(t, obj2, true)
 		expectObjectContent(t, obj2, objectExampleContent)
-
-		obj3 := c.Object("location3")
-		expectSuccess(t, obj1.MoveTo(obj3, nil, nil))
-		expectObjectExistence(t, obj1, false)
-		expectObjectExistence(t, obj2, true)
-		expectObjectExistence(t, obj3, true)
-		expectObjectContent(t, obj3, objectExampleContent)
 	})
 }
 
