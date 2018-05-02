@@ -15,17 +15,17 @@ generate: generated.go
 
 test: static-tests cover.html
 
+PKG = github.com/majewsky/schwift
+TESTPKGS = $(PKG) $(PKG)/tests          # space-separated list of packages containing tests
+COVERPKGS = $(PKG),$(PKG)/gopherschwift # comma-separated list of packages for which to measure coverage
+
 static-tests: FORCE
 	@echo '>> gofmt...'
 	@if s="$$(gofmt -s -l $$(find -name \*.go) 2>/dev/null)" && test -n "$$s"; then echo "$$s"; false; fi
 	@echo '>> golint...'
-	@if s="$$(golint ./... 2>/dev/null)" && test -n "$$s"; then echo "$$s"; false; fi
+	@if s="$$(golint $(TESTPKGS) 2>/dev/null)" && test -n "$$s"; then echo "$$s"; false; fi
 	@echo '>> govet...'
-	@go vet ./...
-
-PKG = github.com/majewsky/schwift
-TESTPKGS = $(PKG) $(PKG)/tests          # space-separated list of packages containing tests
-COVERPKGS = $(PKG),$(PKG)/gopherschwift # comma-separated list of packages for which to measure coverage
+	@go vet $(TESTPKGS)
 
 cover.out.%: FORCE
 	@echo '>> go test...'
