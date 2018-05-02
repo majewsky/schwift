@@ -188,7 +188,15 @@ func (lo *LargeObject) Segments() ([]SegmentInfo, error) {
 	return lo.segments, nil
 }
 
-func (lo *LargeObject) segmentObjects() []*Object {
+//SegmentObjects returns a list of all segment objects referenced by this large
+//object. Note that, in general,
+//
+//	len(lo.SegmentObjects()) <= len(lo.Segments())
+//
+//since one object may be backing multiple segments, and data segments are not
+//backed by any object at all. No guarantee is made about the order in which
+//objects appear in this list.
+func (lo *LargeObject) SegmentObjects() []*Object {
 	seen := make(map[string]bool)
 	result := make([]*Object, 0, len(lo.segments))
 	for _, segment := range lo.segments {
@@ -415,6 +423,7 @@ func (o *Object) AsNewLargeObject(sopts SegmentingOptions, topts *TruncateOption
 			}
 		case ErrNotLarge:
 			//not an error, continue down below
+			err = nil
 		default:
 			return nil, err //unexpected error
 		}
@@ -469,7 +478,7 @@ type TruncateOptions struct {
 //not written by this call, so WriteManifest() usually needs to be called
 //afterwards.
 func (lo *LargeObject) Truncate(opts *TruncateOptions) error {
-	_, _, err := lo.object.c.a.BulkDelete(lo.segmentObjects(), nil, nil)
+	_, _, err := lo.object.c.a.BulkDelete(lo.SegmentObjects(), nil, nil)
 	if err == nil {
 		lo.segments = nil
 	}

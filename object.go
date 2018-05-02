@@ -245,7 +245,7 @@ func (o *Object) Upload(content io.Reader, opts *UploadOptions, ropts *RequestOp
 	}
 
 	if opts.DeleteSegments && lo != nil {
-		_, _, err := lo.object.c.a.BulkDelete(lo.segmentObjects(), nil, nil)
+		_, _, err := lo.object.c.a.BulkDelete(lo.SegmentObjects(), nil, nil)
 		if err != nil {
 			return err
 		}
@@ -362,7 +362,7 @@ func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
 			switch err {
 			case nil:
 				//is large object - delete segments and the object itself in one step
-				_, _, err := o.c.a.BulkDelete(append(lo.segmentObjects(), o), nil, nil)
+				_, _, err := o.c.a.BulkDelete(append(lo.SegmentObjects(), o), nil, nil)
 				o.Invalidate()
 				return err
 			case ErrNotLarge:

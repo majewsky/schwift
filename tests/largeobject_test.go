@@ -139,6 +139,47 @@ func TestLargeObjectsBasic(t *testing.T) {
 	})
 }
 
+func TestTruncateDuringOverwrite(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+
+			//setup phase: create a large object
+			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
+				SegmentContainer: c,
+				SegmentPrefix:    "segments/",
+				Strategy:         strategy,
+			}, nil)
+			expectSuccess(t, err)
+
+			segment1 := getRandomSegmentContent(128)
+			segment2 := getRandomSegmentContent(128)
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment1)), 0))
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment2)), 0))
+			expectSuccess(t, lo.WriteManifest(nil))
+
+			expectObjectExistence(t, c.Object("segments/0000000000000001"), true)
+			expectObjectExistence(t, c.Object("segments/0000000000000002"), true)
+
+			//test phase: truncate using AsNewLargeObject
+			lo, err = obj.AsNewLargeObject(schwift.SegmentingOptions{
+				SegmentContainer: c,
+				Strategy:         strategy,
+			}, &schwift.TruncateOptions{
+				DeleteSegments: true,
+			})
+			expectSuccess(t, err)
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment1)), 0))
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment2)), 0))
+			expectSuccess(t, lo.WriteManifest(nil))
+
+			expectObjectExistence(t, c.Object("segments/0000000000000001"), false)
+			expectObjectExistence(t, c.Object("segments/0000000000000002"), false)
+
+		})
+	})
+}
+
 func TestOpenRegularObjectAsLargeObject(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		o := c.Object("foo")
@@ -181,6 +222,12 @@ func TestSLOWithDataSegment(t *testing.T) {
 				Etag:      etagOfString(segment2),
 			},
 		})
+
+		//check that truncating this does not try to delete the nil segment.Object
+		//in the data segment
+		expectSuccess(t, lo.Truncate(&schwift.TruncateOptions{
+			DeleteSegments: true,
+		}))
 	})
 }
 
@@ -328,6 +375,154 @@ func TestDeleteLargeObjectIncludingSegments(t *testing.T) {
 			names, err := iter.Collect()
 			expectSuccess(t, err)
 			expectObjectNames(t, names)
+		})
+	})
+}
+
+func TestOverwriteLargeObjectAndKeepSegments(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+
+			//setup phase: create a large object
+			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
+				SegmentContainer: c,
+				SegmentPrefix:    "foo/bar/baz/",
+				Strategy:         strategy,
+			}, nil)
+			expectSuccess(t, err)
+
+			segment1 := getRandomSegmentContent(128)
+			segment2 := getRandomSegmentContent(128)
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment1)), 0))
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment2)), 0))
+			expectSuccess(t, lo.WriteManifest(nil))
+
+			//test overwriting that keeps segments
+			expectSuccess(t, obj.Upload(bytes.NewReader(objectExampleContent), nil, nil))
+
+			iter := c.Objects()
+			iter.Prefix = lo.SegmentPrefix()
+			names, err := iter.Collect()
+			expectSuccess(t, err)
+			expectObjectNames(t, names,
+				"foo/bar/baz/0000000000000001",
+				"foo/bar/baz/0000000000000002")
+		})
+	})
+}
+
+func TestOverwriteLargeObjectIncludingSegments(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+
+			//setup phase: create a large object
+			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
+				SegmentContainer: c,
+				SegmentPrefix:    "foo/bar/baz/",
+				Strategy:         strategy,
+			}, nil)
+			expectSuccess(t, err)
+
+			segment1 := getRandomSegmentContent(128)
+			segment2 := getRandomSegmentContent(128)
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment1)), 0))
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment2)), 0))
+			expectSuccess(t, lo.WriteManifest(nil))
+
+			//test overwriting that deletes segments
+			expectSuccess(t, obj.Upload(
+				bytes.NewReader(objectExampleContent),
+				&schwift.UploadOptions{DeleteSegments: true},
+				nil,
+			))
+
+			iter := c.Objects()
+			iter.Prefix = lo.SegmentPrefix()
+			names, err := iter.Collect()
+			expectSuccess(t, err)
+			expectObjectNames(t, names)
+
+			//test overwriting that wants to delete segments, but there aren't any
+			expectSuccess(t, obj.Upload(
+				bytes.NewReader(objectExampleContent),
+				&schwift.UploadOptions{DeleteSegments: true},
+				nil,
+			))
+
+			//while we're at it, test the same for deletion
+			expectSuccess(t, obj.Delete(
+				&schwift.DeleteOptions{DeleteSegments: true},
+				nil,
+			))
+		})
+	})
+}
+
+func TestAddInvalidSegments(t *testing.T) {
+	foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
+		testWithContainer(t, func(c *schwift.Container) {
+			obj := c.Object("largeobject")
+			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
+				SegmentContainer: c,
+				Strategy:         strategy,
+			}, nil)
+			expectSuccess(t, err)
+
+			//must have either backing object or data
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Object: nil,
+				Data:   nil,
+			}), schwift.ErrSegmentInvalid.Error())
+
+			//if data segment, must not have any other attribute
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Data:   []byte("foo"),
+				Object: obj,
+			}), schwift.ErrSegmentInvalid.Error())
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Data:      []byte("foo"),
+				SizeBytes: 3,
+			}), schwift.ErrSegmentInvalid.Error())
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Data: []byte("foo"),
+				Etag: etagOfString("foo"),
+			}), schwift.ErrSegmentInvalid.Error())
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Data:        []byte("foo"),
+				RangeOffset: 2,
+			}), schwift.ErrSegmentInvalid.Error())
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Data:        []byte("foo"),
+				RangeLength: 1,
+			}), schwift.ErrSegmentInvalid.Error())
+
+			//malformed range
+			expectError(t, lo.AddSegment(schwift.SegmentInfo{
+				Object:      obj,
+				RangeOffset: -1,
+				RangeLength: 0,
+			}), schwift.ErrSegmentInvalid.Error())
+
+			//DLO is strict about the SegmentContainer and SegmentPrefix, but SLO accepts it
+			c2 := c.Account().Container("foo")
+			err = lo.AddSegment(schwift.SegmentInfo{
+				Object: c2.Object("foo"),
+			})
+			if strategy == schwift.DynamicLargeObject {
+				expectError(t, err, schwift.ErrContainerMismatch.Error())
+			} else {
+				expectSuccess(t, err)
+			}
+			err = lo.AddSegment(schwift.SegmentInfo{
+				Object: c.Object("definitely-not-in-the-segment-prefix"),
+			})
+			if strategy == schwift.DynamicLargeObject {
+				expectError(t, err, schwift.ErrContainerMismatch.Error())
+			} else {
+				expectSuccess(t, err)
+			}
 		})
 	})
 }
