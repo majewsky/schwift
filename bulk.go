@@ -26,6 +26,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/majewsky/schwift/capabilities"
 )
 
 //BulkUploadFormat enumerates possible archive formats for Container.BulkUpload().
@@ -160,7 +162,7 @@ func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *R
 	if err != nil {
 		return 0, 0, err
 	}
-	if caps.BulkDelete == nil {
+	if caps.BulkDelete == nil || !capabilities.AllowBulkDelete {
 		return a.bulkDeleteSingle(objects, containers, opts)
 	}
 	chunkSize := int(caps.BulkDelete.MaximumDeletesPerRequest)
