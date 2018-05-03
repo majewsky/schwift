@@ -21,6 +21,7 @@ package tests
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/majewsky/schwift"
@@ -130,6 +131,55 @@ func TestObjectIterator(t *testing.T) {
 	})
 }
 
+func TestPseudoDirectories(t *testing.T) {
+	testWithContainer(t, func(c *schwift.Container) {
+		//create test objects that can be listed
+		objectNames := []string{
+			"foo/1",
+			"foo/2",
+			"foo/3",
+			"foo/bar",
+			"foo/bar/1",
+			"foo/bar/2",
+			"foo/bar/3",
+		}
+		for _, name := range objectNames {
+			hdr := schwift.NewObjectHeaders()
+			hdr.ContentType().Set("application/json")
+			err := c.Object(name).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
+			expectSuccess(t, err)
+		}
+
+		//test iteration with Delimiter and no Prefix
+		iter := c.Objects()
+		iter.Delimiter = "/"
+		os, err := iter.Collect()
+		expectSuccess(t, err)
+		expectObjectNames(t, os, "foo/")
+
+		iter = c.Objects()
+		iter.Delimiter = "/"
+		ois, err := iter.CollectDetailed()
+		expectSuccess(t, err)
+		expectObjectInfos(t, ois, "subdir:foo/")
+
+		//test iteration with Delimited and Prefix
+		iter = c.Objects()
+		iter.Prefix = "foo/"
+		iter.Delimiter = "/"
+		os, err = iter.Collect()
+		expectSuccess(t, err)
+		expectObjectNames(t, os, "foo/1", "foo/2", "foo/3", "foo/bar", "foo/bar/")
+
+		iter = c.Objects()
+		iter.Prefix = "foo/"
+		iter.Delimiter = "/"
+		ois, err = iter.CollectDetailed()
+		expectSuccess(t, err)
+		expectObjectInfos(t, ois, "foo/1", "foo/2", "foo/3", "foo/bar", "subdir:foo/bar/")
+	})
+}
+
 func expectContainerHeadersCached(t *testing.T, c *schwift.Container) {
 	requestCountBefore := c.Account().Backend().(*RequestCountingBackend).Count
 	_, err := c.Headers()
@@ -165,24 +215,43 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 		return
 	}
 	for idx, info := range actualInfos {
-		if info.Object.Name() != expectedNames[idx] {
-			t.Errorf("expected objects[%d].Name() == %q, got %q",
-				idx, expectedNames[idx], info.Object.Name())
-		}
-		if info.SizeBytes != uint64(len(objectExampleContent)) {
-			t.Errorf("expected objects[%d] sizeBytes == %d, got %d",
-				idx, len(objectExampleContent), info.SizeBytes)
-		}
-		if info.ContentType != "application/json" {
-			t.Errorf(`expected objects[%d] contentType == "application/json", got %q`,
-				idx, info.ContentType)
-		}
-		if info.Etag != objectExampleContentEtag {
-			t.Errorf("expected objects[%d] etag == %q, got %q",
-				idx, objectExampleContentEtag, info.Etag)
-		}
-		if info.LastModified.IsZero() {
-			t.Errorf("objects[%d].LastModified is zero", idx)
+		if strings.HasPrefix(expectedNames[idx], "subdir:") {
+			expectedSubdir := strings.TrimPrefix(expectedNames[idx], "subdir:")
+			if expectedSubdir != info.SubDirectory {
+				t.Errorf("expected objects[%d] subdir = %q, got %q",
+					idx, expectedSubdir, info.SubDirectory)
+			}
+			if info != (schwift.ObjectInfo{SubDirectory: info.SubDirectory}) {
+				t.Errorf("expected objects[%d] to be a subdir, got %#v",
+					idx, info)
+			}
+		} else {
+			if info.SubDirectory != "" {
+				t.Errorf("expected objects[%d] to be an object, got subdir = %q",
+					idx, info.SubDirectory)
+			}
+			if info.Object == nil {
+				t.Errorf("expected objects[%d].Name() == %q, got object == nil",
+					idx, expectedNames[idx])
+			} else if info.Object.Name() != expectedNames[idx] {
+				t.Errorf("expected objects[%d].Name() == %q, got %q",
+					idx, expectedNames[idx], info.Object.Name())
+			}
+			if info.SizeBytes != uint64(len(objectExampleContent)) {
+				t.Errorf("expected objects[%d] sizeBytes == %d, got %d",
+					idx, len(objectExampleContent), info.SizeBytes)
+			}
+			if info.ContentType != "application/json" {
+				t.Errorf(`expected objects[%d] contentType == "application/json", got %q`,
+					idx, info.ContentType)
+			}
+			if info.Etag != objectExampleContentEtag {
+				t.Errorf("expected objects[%d] etag == %q, got %q",
+					idx, objectExampleContentEtag, info.Etag)
+			}
+			if info.LastModified.IsZero() {
+				t.Errorf("objects[%d].LastModified is zero", idx)
+			}
 		}
 	}
 }
