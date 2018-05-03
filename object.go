@@ -27,7 +27,9 @@ import (
 	"net/http"
 )
 
-//Object represents a Swift object.
+//Object represents a Swift object. Instances are usually obtained by
+//traversing downwards from a container with Container.Object() or
+//Container.Objects().
 type Object struct {
 	c    *Container
 	name string
@@ -38,7 +40,7 @@ type Object struct {
 //Object returns a handle to the object with the given name within this
 //container. This function does not issue any HTTP requests, and therefore cannot
 //ensure that the object exists. Use the Exists() function to check for the
-//container's existence.
+//object's existence.
 func (c *Container) Object(name string) *Object {
 	return &Object{c: c, name: name}
 }
@@ -49,8 +51,8 @@ func (o *Object) Container() *Container {
 }
 
 //Name returns the object name. This does not parse the name in any way; if you
-//want only the basename portion of the object name, use package path in
-//conjunction with this function. For example:
+//want only the basename portion of the object name, use package path from the
+//standard library in conjunction with this function. For example:
 //
 //	obj := account.Container("docs").Object("2018-02-10/invoice.pdf")
 //	obj.Name()            //returns "2018-02-10/invoice.pdf"
@@ -116,7 +118,7 @@ func (o *Object) Headers() (ObjectHeaders, error) {
 //Update updates the object's headers using a POST request. To add URL
 //parameters, pass a non-nil *RequestOptions.
 //
-//This operation returns http.StatusNotFound if the object does not exist.
+//This operation fails with http.StatusNotFound if the object does not exist.
 //
 //A successful POST request implies Invalidate() since it may change metadata.
 func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
@@ -155,6 +157,10 @@ type UploadOptions struct {
 //If you have neither an io.Reader nor a []byte or string, but you have a
 //function that generates the object's content into an io.Writer, use
 //UploadWithWriter instead.
+//
+//If the object is very large and you want to upload it in segments, use
+//LargeObject.Append() instead. See documentation on type LargeObject for
+//details.
 //
 //If content is a *bytes.Reader or a *bytes.Buffer instance, the Content-Length
 //and Etag request headers will be computed automatically. Otherwise, it is
@@ -398,13 +404,13 @@ func (o *Object) Invalidate() {
 //for reading the object contents progressively, or whether you want the object
 //contents collected into a byte slice or string.
 //
-//	reader, err := object.Download(nil, nil).AsReadCloser()
+//	reader, err := object.Download(nil).AsReadCloser()
 //
-//	buf, err := object.Download(nil, nil).AsByteSlice()
+//	buf, err := object.Download(nil).AsByteSlice()
 //
-//	str, err := object.Download(nil, nil).AsString()
+//	str, err := object.Download(nil).AsString()
 //
-//See struct DownloadedObject for details.
+//See documentation on type DownloadedObject for details.
 func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 	resp, err := Request{
 		Method:            "GET",

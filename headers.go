@@ -86,7 +86,7 @@ func (h Headers) ToHTTP() http.Header {
 //	hdr := NewObjectHeaders()
 //	hdr.ContentType().Set("image/png")
 //	hdr.Metadata().Set("color", "blue")
-//	obj.Upload(content, hdr.ToOpts())
+//	obj.Upload(content, nil, hdr.ToOpts())
 //
 func (h Headers) ToOpts() *RequestOptions {
 	return &RequestOptions{Headers: h}

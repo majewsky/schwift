@@ -22,7 +22,9 @@ import (
 	"net/http"
 )
 
-//Container represents a Swift container.
+//Container represents a Swift container. Instances are usually obtained by
+//traversing downwards from an account with Account.Container() or
+//Account.Containers(), or upwards from an object with Object.Container().
 type Container struct {
 	a    *Account
 	name string

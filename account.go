@@ -25,7 +25,9 @@ import (
 	"regexp"
 )
 
-//Account represents a Swift account.
+//Account represents a Swift account. Instances are usually obtained by
+//connecting to a backend (see package-level documentation), or by traversing
+//upwards from a container with Container.Account().
 type Account struct {
 	backend Backend
 	//URL parts
@@ -57,7 +59,7 @@ func InitializeAccount(backend Backend) (*Account, error) {
 	}, nil
 }
 
-//SwitchAccount returns a handle on a different account on the same server. Note
+//SwitchAccount returns a handle to a different account on the same server. Note
 //that you need reseller permissions to access accounts other than that where
 //you originally authenticated. This method does not check whether the account
 //actually exists.

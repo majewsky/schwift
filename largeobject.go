@@ -44,7 +44,7 @@ import (
 //
 //For .RangeLength == 0, the segment consists of all the bytes in the backing
 //object, after skipping the first .RangeOffset bytes. The default
-//(.RangeOffset == 0) includes the entire contents of the backing object.
+//(.RangeOffset == 0) is to include the entire contents of the backing object.
 //
 //For .RangeLength > 0, the segment consists of that many bytes from the
 //backing object, again after skipping the first .RangeOffset bytes.
@@ -79,13 +79,14 @@ type sloSegmentInfo struct {
 	DataBase64 string `json:"data,omitempty"`
 }
 
-//LargeObjectStrategy is an enum of segmenting strategies supported by Swift.
+//LargeObjectStrategy enumerates segmenting strategies supported by Swift.
 type LargeObjectStrategy int
 
-//NOTE: No valid value for LargeObjectStrategy has the numeric value 0. That
-//way, we can change the default strategy in a later version of Schwift, also
-//possibly depending on the server capabilities. A numeric value of 0 is
-//recognized by all functions taking a SegmentingOptions.
+//A value of 0 for LargeObjectStrategy will instruct Schwift to choose a
+//strategy itself. Right now, Schwift always chooses StaticLargeObject, but
+//this behavior may change in future versions of Schwift, esp. if new
+//strategies become available. The choice may also start to depend on the
+//capabilities advertised by the server.
 const (
 	//StaticLargeObject is the default LargeObjectStrategy used by Schwift.
 	StaticLargeObject LargeObjectStrategy = iota + 1
@@ -96,16 +97,14 @@ const (
 )
 
 //SegmentingOptions describes how an object is segmented. It is passed to
-//Object.AsNewLargeObject(), and also to Object.Upload() when desired.
+//Object.AsNewLargeObject().
 //
-//If Strategy is not set, a reasonable strategy is chosen. Right now, this is
-//always StaticLargeObject, but the choice may change in future relases, or may
-//start to depend on the Account.Capabilities().
+//If Strategy is not set, a reasonable strategy is chosen; see documentation on
+//LargeObjectStrategy for details.
 //
-//SegmentContainer must not be nil. A value of nil will cause the consuming
-//method to panic. If the SegmentContainer is not in the same account as the
-//large object, ErrAccountMismatch is returned from the method consuming the
-//SegmentingOptions.
+//SegmentContainer must not be nil. A value of nil will cause Schwift to panic.
+//If the SegmentContainer is not in the same account as the large object,
+//ErrAccountMismatch will be returned by Schwift.
 //
 //If SegmentPrefix is empty, a reasonable default will be computed by
 //Object.AsNewLargeObject(), using the format
@@ -407,9 +406,9 @@ func parseHTTPRange(str string) (offsetVal int64, lengthVal uint64, ok bool) {
 //
 //This function can be used regardless of whether the object exists or not.
 //If the object exists and is a large object, this function behaves like
-//Object.AsLargeObject() followed by Truncate(), but segmenting options are
-//initialized from the method's SegmentingOptions argument rather than from the
-//existing manifest.
+//Object.AsLargeObject() followed by Truncate(), except that segmenting options
+//are initialized from the method's SegmentingOptions argument rather than from
+//the existing manifest.
 func (o *Object) AsNewLargeObject(sopts SegmentingOptions, topts *TruncateOptions) (*LargeObject, error) {
 	//we only need to load the existing large object if we want to do something
 	//with the old segments

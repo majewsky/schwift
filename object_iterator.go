@@ -57,7 +57,7 @@ type ObjectInfo struct {
 //To obtain any other metadata, you can call Object.Headers() on the result
 //object, but this will issue a separate HEAD request for each object.
 //
-//Use the "Detailed" methods only when you can use the extra metadata in struct
+//Use the "Detailed" methods only when you use the extra metadata in struct
 //ObjectInfo; detailed GET requests are more expensive than simple ones that
 //return only object names.
 type ObjectIterator struct {
@@ -81,7 +81,7 @@ func (i *ObjectIterator) getBase() *iteratorBase {
 }
 
 //NextPage queries Swift for the next page of object names. If limit is
-//>= 0, not more than that object names will be returned at once. Note
+//>= 0, not more than that many object names will be returned at once. Note
 //that the server also has a limit for how many objects to list in one
 //request; the lower limit wins.
 //

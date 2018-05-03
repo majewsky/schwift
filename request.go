@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-//RequestOptions is used to pass additional headers and values to aa request.
+//RequestOptions is used to pass additional headers and values to a request.
 //
 //When preparing a RequestOptions instance with additional headers, the
 //preferred way is to create an AccountHeaders, ContainerHeaders and

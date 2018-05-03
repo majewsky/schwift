@@ -60,8 +60,7 @@ const (
 //if some files could not be saved individually (e.g. because a quota was
 //exceeded in the middle of the archive extraction).
 //
-//If not nil, the error return value is *usually* an instance of
-//BulkError.
+//If not nil, the error return value is *usually* an instance of BulkError.
 //
 //This operation returns (0, ErrNotSupported) if the server does not support
 //bulk-uploading.
@@ -125,7 +124,7 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 //	var container *schwift.Container
 //
 //	objects, err := container.Objects().Collect()
-//	numDeleted, numNotFound, err := container.Account().BulkDelete(objects, nil, nil, nil)
+//	numDeleted, numNotFound, err := container.Account().BulkDelete(objects, nil, nil)
 //
 //To also delete the container:
 //
@@ -133,13 +132,12 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 //
 //	objects, err := container.Objects().Collect()
 //	numDeleted, numNotFound, err := container.Account().BulkDelete(
-//	    objects, []*schwift.Container{container}, nil, nil)
+//	    objects, []*schwift.Container{container}, nil)
 //
 //If the server does not support bulk-deletion, this function falls back to
 //deleting each object and container individually, and aggregates the result.
 //
-//If not nil, the error return value is *usually* an instance of
-//BulkError.
+//If not nil, the error return value is *usually* an instance of BulkError.
 //
 //The objects may be located in multiple containers, but they and the
 //containers must all be located in the given account. (Otherwise,
