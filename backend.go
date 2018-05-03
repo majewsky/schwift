@@ -34,10 +34,15 @@ type Backend interface {
 	//the given URL. This is used by Account.SwitchAccount().
 	Clone(newEndpointURL string) Backend
 	//Do executes the given HTTP request after adding to it the X-Auth-Token
-	//header containing the backend's current Keystone (or Swift auth) token. It
-	//may also set other headers, such as User-Agent. If the status code returned
-	//is 401, it shall attempt to acquire a new auth token and restart the
-	//request with the new token.
+	//header containing the backend's current Keystone (or Swift auth) token. If
+	//the status code returned is 401, it shall attempt to acquire a new auth
+	//token and restart the request with the new token.
+	//
+	//If the user has not supplied their own User-Agent string to the backend,
+	//the backend should use the schwift.DefaultUserAgent constant instead.
 	Do(req *http.Request) (*http.Response, error)
-	//TODO add UserAgent argument to Do()
 }
+
+//DefaultUserAgent is the User-Agent string that Backend implementations should
+//use if the user does not provide their own User-Agent string.
+const DefaultUserAgent = "schwift/" + Version

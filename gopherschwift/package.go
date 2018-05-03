@@ -50,15 +50,30 @@ import (
 	"github.com/majewsky/schwift"
 )
 
+//Options contains additional options that can be passed to Wrap().
+type Options struct {
+	//If set, this User-Agent will be reported in HTTP requests instead of
+	//schwift.DefaultUserAgent.
+	UserAgent string
+}
+
 //Wrap creates a schwift.Account that uses the given service client as its
 //backend. The service client must refer to a Swift endpoint, i.e. it should
 //have been created by openstack.NewObjectStorageV1().
-func Wrap(client *gophercloud.ServiceClient) (*schwift.Account, error) {
-	return schwift.InitializeAccount(&backend{client})
+func Wrap(client *gophercloud.ServiceClient, opts *Options) (*schwift.Account, error) {
+	b := &backend{
+		c:         client,
+		userAgent: schwift.DefaultUserAgent,
+	}
+	if opts != nil && opts.UserAgent != "" {
+		b.userAgent = opts.UserAgent
+	}
+	return schwift.InitializeAccount(b)
 }
 
 type backend struct {
-	c *gophercloud.ServiceClient
+	c         *gophercloud.ServiceClient
+	userAgent string
 }
 
 func (g *backend) EndpointURL() string {
@@ -68,7 +83,10 @@ func (g *backend) EndpointURL() string {
 func (g *backend) Clone(newEndpointURL string) schwift.Backend {
 	clonedClient := *g.c
 	clonedClient.Endpoint = newEndpointURL
-	return &backend{&clonedClient}
+	return &backend{
+		c:         &clonedClient,
+		userAgent: g.userAgent,
+	}
 }
 
 func (g *backend) Do(req *http.Request) (*http.Response, error) {
@@ -78,10 +96,10 @@ func (g *backend) Do(req *http.Request) (*http.Response, error) {
 func (g *backend) do(req *http.Request, afterReauth bool) (*http.Response, error) {
 	provider := g.c.ProviderClient
 
-	req.Header.Set("User-Agent", provider.UserAgent.Join())
 	for key, value := range provider.AuthenticatedHeaders() {
 		req.Header.Set(key, value)
 	}
+	req.Header.Set("User-Agent", g.userAgent)
 
 	resp, err := provider.HTTPClient.Do(req)
 	if err != nil {

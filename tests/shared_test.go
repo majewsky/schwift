@@ -71,7 +71,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 		}
 	}
 
-	account, err := gopherschwift.Wrap(client)
+	account, err := gopherschwift.Wrap(client, nil)
 	if err != nil {
 		t.Error(err.Error())
 		return
