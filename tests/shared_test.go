@@ -29,6 +29,7 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
 )
@@ -41,15 +42,10 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 
 	if stAuth == "" && stUser == "" && stKey == "" {
 		//option 1: Keystone authentication
-		authOptions, err := openstack.AuthOptionsFromEnv()
+		provider, err := clientconfig.AuthenticatedClient(nil)
 		if err != nil {
-			t.Error("missing Swift credentials (need either ST_AUTH, ST_USER, ST_KEY or OS_* variables)")
-			t.Error("openstack.AuthOptionsFromEnv returned: " + err.Error())
-			return
-		}
-		provider, err := openstack.AuthenticatedClient(authOptions)
-		if err != nil {
-			t.Errorf("openstack.AuthenticatedClient returned: " + err.Error())
+			t.Errorf("clientconfig.AuthenticatedClient returned: " + err.Error())
+			t.Error("probably missing Swift credentials (need either ST_AUTH, ST_USER, ST_KEY or OS_* variables)")
 			return
 		}
 		client, err = openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
