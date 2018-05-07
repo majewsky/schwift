@@ -187,7 +187,7 @@ func TestObjectUpdate(t *testing.T) {
 	})
 }
 
-func TestObjectCopyMove(t *testing.T) {
+func TestObjectCopy(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj1 := c.Object("location1")
 		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
@@ -201,6 +201,58 @@ func TestObjectCopyMove(t *testing.T) {
 		expectObjectContent(t, obj2, objectExampleContent)
 	})
 }
+
+func TestSymlinkOperations(t *testing.T) {
+	testWithContainer(t, func(c *schwift.Container) {
+		//create a test object that we can link to
+		obj1 := c.Object("target")
+		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
+		expectSuccess(t, err)
+		expectObjectExistence(t, obj1, true)
+
+		//create a symlink
+		obj2 := c.Object("symlink")
+		expectSuccess(t, obj2.SymlinkTo(obj1, nil, nil))
+		expectObjectExistence(t, obj2, true)
+		expectObjectSymlink(t, obj2, obj1)
+		expectObjectContent(t, obj2, objectExampleContent)
+
+		//overwrite symlink with normal object
+		otherContent := []byte("abc")
+		expectSuccess(t, obj2.Upload(bytes.NewReader(otherContent), nil, nil))
+		expectObjectExistence(t, obj2, true)
+		expectObjectSymlink(t, obj2, nil)
+		expectObjectContent(t, obj2, otherContent)
+
+		//overwrite normal object with symlink
+		expectSuccess(t, obj2.SymlinkTo(obj1, nil, nil))
+		expectObjectExistence(t, obj2, true)
+		expectObjectSymlink(t, obj2, obj1)
+		expectObjectContent(t, obj2, objectExampleContent)
+
+		//deep-copy symlink
+		obj3 := c.Object("copy")
+		expectSuccess(t, obj2.CopyTo(obj3, nil, nil))
+		expectObjectExistence(t, obj3, true)
+		expectObjectSymlink(t, obj3, nil)
+		expectObjectContent(t, obj3, objectExampleContent)
+
+		//shallow-copy symlink
+		expectSuccess(t, obj2.CopyTo(obj3, &schwift.CopyOptions{
+			ShallowCopySymlinks: true,
+		}, nil))
+		expectObjectExistence(t, obj3, true)
+		expectObjectSymlink(t, obj3, obj1)
+		expectObjectContent(t, obj3, objectExampleContent)
+
+		//delete symlink
+		expectSuccess(t, obj2.Delete(nil, nil))
+		expectObjectExistence(t, obj2, false)
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// helpers
 
 func expectObjectExistence(t *testing.T, obj *schwift.Object, expectedExists bool) {
 	t.Helper()
@@ -220,5 +272,30 @@ func expectObjectContent(t *testing.T, obj *schwift.Object, expected []byte) {
 	expectSuccess(t, err)
 	if !hdr.IsLargeObject() {
 		expectString(t, hdr.Etag().Get(), etagOf(expected))
+	}
+}
+
+func expectObjectSymlink(t *testing.T, source, expectedTarget *schwift.Object) {
+	t.Helper()
+	target, _, err := source.InspectSymlink()
+	if expectedTarget == nil {
+		switch err {
+		case schwift.ErrNotASymlink:
+			return //success
+		case nil:
+			t.Errorf("expected %s to not be a symlink, but found symlink to %s\n",
+				source.FullName(), target.FullName())
+		default:
+			t.Errorf("got unexpected error from Object.SymlinkTarget() for %s: %s\n",
+				source.FullName(), err.Error())
+		}
+	} else {
+		if err != nil {
+			t.Errorf("expected %s to be a symlink to %s, but Object.SymlinkTarget() returned error: %s\n",
+				source.FullName(), expectedTarget.FullName(), err.Error())
+		} else if target.FullName() != expectedTarget.FullName() {
+			t.Errorf("expected %s to be a symlink to %s, but got target %s\n",
+				source.FullName(), expectedTarget.FullName(), target.FullName())
+		}
 	}
 }

@@ -22,9 +22,12 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"hash"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 //Object represents a Swift object. Instances are usually obtained by
@@ -34,7 +37,8 @@ type Object struct {
 	c    *Container
 	name string
 	//cache
-	headers *ObjectHeaders
+	headers        *ObjectHeaders //from HEAD/GET without ?symlink=get
+	symlinkHeaders *ObjectHeaders //from HEAD/GET with ?symlink=get
 }
 
 //Object returns a handle to the object with the given name within this
@@ -88,31 +92,40 @@ func (o *Object) Exists() (bool, error) {
 //Headers returns the ObjectHeaders for this object. If the ObjectHeaders
 //has not been cached yet, a HEAD request is issued on the object.
 //
+//For symlinks, this operation returns the metadata for the target object. Use
+//Object.InspectSymlink() to obtain the metadata for the symlink instead.
+//
 //This operation fails with http.StatusNotFound if the object does not exist.
 func (o *Object) Headers() (ObjectHeaders, error) {
 	if o.headers != nil {
 		return *o.headers, nil
 	}
 
+	hdr, err := o.fetchHeaders(nil)
+	if err != nil {
+		return ObjectHeaders{}, err
+	}
+	o.headers = hdr
+	return *hdr, nil
+}
+
+func (o *Object) fetchHeaders(opts *RequestOptions) (*ObjectHeaders, error) {
 	resp, err := Request{
 		Method:        "HEAD",
 		ContainerName: o.c.name,
 		ObjectName:    o.name,
+		Options:       opts,
 		//since Openstack LOVES to be inconsistent with everything (incl. itself),
 		//this returns 200 instead of 204
 		ExpectStatusCodes: []int{200},
+		DrainResponseBody: true,
 	}.Do(o.c.a.backend)
 	if err != nil {
-		return ObjectHeaders{}, err
+		return nil, err
 	}
 
 	headers := ObjectHeaders{headersFromHTTP(resp.Header)}
-	err = headers.Validate()
-	if err != nil {
-		return headers, err
-	}
-	o.headers = &headers
-	return *o.headers, nil
+	return &headers, headers.Validate()
 }
 
 //Update updates the object's headers using a POST request. To add URL
@@ -397,6 +410,7 @@ func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
 //to Headers() on this instance will issue a HEAD request on the object.
 func (o *Object) Invalidate() {
 	o.headers = nil
+	o.symlinkHeaders = nil
 }
 
 //Download retrieves the object's contents using a GET request. This returns a
@@ -424,7 +438,11 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 		newHeaders := ObjectHeaders{headersFromHTTP(resp.Header)}
 		err = newHeaders.Validate()
 		if err == nil {
-			o.headers = &newHeaders
+			if opts != nil && opts.Values != nil && opts.Values.Get("symlink") == "get" {
+				o.symlinkHeaders = &newHeaders
+			} else {
+				o.headers = &newHeaders
+			}
 		}
 		body = resp.Body
 	}
@@ -432,21 +450,15 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 }
 
 //CopyOptions invokes advanced behavior in the Object.Copy() method.
-//
-//It's empty right now, but has been added providently to make future expansion
-//backwards-compatible.
-type CopyOptions struct{}
+type CopyOptions struct {
+	//Copy only the object's content, not its metadata. New metadata can always
+	//be supplied in the RequestOptions argument of Object.CopyTo().
+	FreshMetadata bool
+	//When the source is a symlink, copy the symlink instead of the target object.
+	ShallowCopySymlinks bool
+}
 
-//CopyTo copies the object on the server side using a COPY request. To copy
-//only the content, not the metadata, use the X-Fresh-Metadata header:
-//
-//	hdr := make(ObjectHeaders)
-//	hdr.Set("X-Fresh-Metadata", "true")
-//	err := sourceObject.CopyTo(targetObject, hdr, nil)
-//
-//If X-Fresh-Metadata is not set (or set to false), all metadata from the
-//source object will be copied to the target, but you can overwrite metadata by
-//providing new values in the headers argument, like with Update().
+//CopyTo copies the object on the server side using a COPY request.
 //
 //A successful COPY implies target.Invalidate() since it may change the
 //target's metadata.
@@ -455,6 +467,14 @@ func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions
 	ropts.Headers.Set("Destination", target.FullName())
 	if o.c.a.name != target.c.a.name {
 		ropts.Headers.Set("Destination-Account", target.c.a.name)
+	}
+	if opts != nil {
+		if opts.FreshMetadata {
+			ropts.Headers.Set("X-Fresh-Metadata", "true")
+		}
+		if opts.ShallowCopySymlinks {
+			ropts.Values.Set("symlink", "get")
+		}
 	}
 
 	_, err := Request{
@@ -469,4 +489,72 @@ func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions
 		target.Invalidate()
 	}
 	return err
+}
+
+//SymlinkOptions invokes advanced behavior in the Object.SymlinkTo() method.
+type SymlinkOptions struct {
+	//When overwriting a large object, delete its segments. This will cause
+	//SymlinkTo() to call into BulkDelete(), so a BulkError may be returned.
+	DeleteSegments bool
+}
+
+//SymlinkTo creates the object as a symbolic link to another object using a PUT
+//request. Like Object.Upload(), this method works regardless of whether the
+//object already exists or not. Existing object contents will be overwritten by
+//this operation.
+//
+//A successful PUT request implies Invalidate() since it may change metadata.
+func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestOptions) error {
+	ropts = cloneRequestOptions(ropts, nil)
+	ropts.Headers.Set("X-Symlink-Target", target.FullName())
+	if !target.c.a.isEqualTo(o.c.a) {
+		ropts.Headers.Set("X-Symlink-Target-Account", target.c.a.Name())
+	}
+
+	var uopts *UploadOptions
+	if opts != nil {
+		uopts = &UploadOptions{
+			DeleteSegments: opts.DeleteSegments,
+		}
+	}
+
+	return o.Upload(nil, uopts, ropts)
+}
+
+//InspectSymlink returns the object that this symlink points to, and the
+//metadata of the symlink. ErrNotASymlink is returned if the object is not a
+//symlink.
+//
+//This operation fails with http.StatusNotFound if the object does not exist.
+func (o *Object) InspectSymlink() (target *Object, headers ObjectHeaders, err error) {
+	if o.symlinkHeaders == nil {
+		o.symlinkHeaders, err = o.fetchHeaders(&RequestOptions{
+			Values: url.Values{"symlink": []string{"get"}},
+		})
+		if err != nil {
+			return nil, ObjectHeaders{}, err
+		}
+	}
+
+	//is this a symlink?
+	targetFullName := o.symlinkHeaders.Get("X-Symlink-Target")
+	if targetFullName == "" {
+		return nil, ObjectHeaders{}, ErrNotASymlink
+	}
+	fields := strings.SplitN(targetFullName, "/", 2)
+	if len(fields) < 2 {
+		return nil, ObjectHeaders{}, MalformedHeaderError{
+			Key:        "X-Symlink-Target",
+			ParseError: fmt.Errorf("expected \"container/object\", got \"%s\"", targetFullName),
+		}
+	}
+
+	//cross-account symlink?
+	accountName := o.symlinkHeaders.Get("X-Symlink-Target-Account")
+	targetAccount := o.c.a
+	if accountName != "" && accountName != targetAccount.Name() {
+		targetAccount = targetAccount.SwitchAccount(accountName)
+	}
+	target = targetAccount.Container(fields[0]).Object(fields[1])
+	return target, *o.symlinkHeaders, nil
 }
