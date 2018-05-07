@@ -20,6 +20,7 @@ package schwift
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -33,6 +34,8 @@ type ObjectInfo struct {
 	ContentType  string
 	Etag         string
 	LastModified time.Time
+	//SymlinkTarget is only set for symlinks.
+	SymlinkTarget *Object
 	//If the ObjectInfo refers to an actual object, then SubDirectory is empty.
 	//If the ObjectInfo refers to a pseudo-directory, then SubDirectory contains
 	//the path of the pseudo-directory and all other fields are nil/zero/empty.
@@ -113,6 +116,9 @@ func (i *ObjectIterator) NextPage(limit int) ([]*Object, error) {
 	return result, nil
 }
 
+//The symlink_path attribute looks like "/v1/AUTH_foo/containername/obje/ctna/me".
+var symlinkPathRx = regexp.MustCompile(`^/v1/([^/]+)/([^/]+)/(.+)$`)
+
 //NextPageDetailed is like NextPage, but includes basic metadata.
 func (i *ObjectIterator) NextPageDetailed(limit int) ([]ObjectInfo, error) {
 	b := i.getBase()
@@ -124,6 +130,7 @@ func (i *ObjectIterator) NextPageDetailed(limit int) ([]ObjectInfo, error) {
 		Etag            string `json:"hash"`
 		LastModifiedStr string `json:"last_modified"`
 		Name            string `json:"name"`
+		SymlinkPath     string `json:"symlink_path"`
 		//or just this:
 		Subdir string `json:"subdir"`
 	}
@@ -149,6 +156,18 @@ func (i *ObjectIterator) NextPageDetailed(limit int) ([]ObjectInfo, error) {
 			if err != nil {
 				//this error is sufficiently obscure that we don't need to expose a type for it
 				return nil, fmt.Errorf("Bad field objects[%d].last_modified: %s", idx, err.Error())
+			}
+			if data.SymlinkPath != "" {
+				match := symlinkPathRx.FindStringSubmatch(data.SymlinkPath)
+				if match == nil {
+					//like above
+					return nil, fmt.Errorf("Bad field objects[%d].symlink_path: %q", idx, data.SymlinkPath)
+				}
+				a := i.Container.a
+				if a.Name() != match[1] {
+					a = a.SwitchAccount(match[1])
+				}
+				result[idx].SymlinkTarget = a.Container(match[2]).Object(match[3])
 			}
 		} else {
 			marker = data.Subdir

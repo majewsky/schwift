@@ -510,6 +510,11 @@ func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestO
 	if !target.c.a.isEqualTo(o.c.a) {
 		ropts.Headers.Set("X-Symlink-Target-Account", target.c.a.Name())
 	}
+	if ropts.Headers.Get("Content-Type") == "" {
+		//recommended Content-Type for symlinks as per
+		//<https://docs.openstack.org/swift/latest/middleware.html#symlink>
+		ropts.Headers.Set("Content-Type", "application/symlink")
+	}
 
 	var uopts *UploadOptions
 	if opts != nil {

@@ -180,6 +180,35 @@ func TestPseudoDirectories(t *testing.T) {
 	})
 }
 
+func TestObjectIteratorWithSymlinks(t *testing.T) {
+	testWithContainer(t, func(c *schwift.Container) {
+		//create test objects that can be listed
+		objectNames := []string{
+			"foo/1",
+			"foo/3",
+		}
+		for _, name := range objectNames {
+			hdr := schwift.NewObjectHeaders()
+			hdr.ContentType().Set("application/json")
+			err := c.Object(name).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
+			expectSuccess(t, err)
+		}
+
+		//create a test symlink
+		expectSuccess(t, c.Object("foo/2").SymlinkTo(c.Object("foo/1"), nil, nil))
+
+		iter := c.Objects()
+		os, err := iter.Collect()
+		expectSuccess(t, err)
+		expectObjectNames(t, os, "foo/1", "foo/2", "foo/3")
+
+		iter = c.Objects()
+		ois, err := iter.CollectDetailed()
+		expectSuccess(t, err)
+		expectObjectInfos(t, ois, "foo/1", "symlink:foo/2>foo/1", "foo/3")
+	})
+}
+
 func expectContainerHeadersCached(t *testing.T, c *schwift.Container) {
 	requestCountBefore := c.Account().Backend().(*RequestCountingBackend).Count
 	_, err := c.Headers()
@@ -215,6 +244,7 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 		return
 	}
 	for idx, info := range actualInfos {
+		//case 1: pseudo-directory
 		if strings.HasPrefix(expectedNames[idx], "subdir:") {
 			expectedSubdir := strings.TrimPrefix(expectedNames[idx], "subdir:")
 			if expectedSubdir != info.SubDirectory {
@@ -225,33 +255,75 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 				t.Errorf("expected objects[%d] to be a subdir, got %#v",
 					idx, info)
 			}
-		} else {
-			if info.SubDirectory != "" {
-				t.Errorf("expected objects[%d] to be an object, got subdir = %q",
-					idx, info.SubDirectory)
-			}
+			continue
+		}
+		if info.SubDirectory != "" {
+			t.Errorf("expected objects[%d] to be an object, got subdir = %q",
+				idx, info.SubDirectory)
+		}
+
+		//case 2: symlink
+		if strings.HasPrefix(expectedNames[idx], "symlink:") {
+			fields := strings.SplitN(strings.TrimPrefix(expectedNames[idx], "symlink:"), ">", 2)
+			expectedName, expectedTargetName := fields[0], fields[1]
+
 			if info.Object == nil {
 				t.Errorf("expected objects[%d].Name() == %q, got object == nil",
 					idx, expectedNames[idx])
-			} else if info.Object.Name() != expectedNames[idx] {
+			} else if info.Object.Name() != expectedName {
 				t.Errorf("expected objects[%d].Name() == %q, got %q",
-					idx, expectedNames[idx], info.Object.Name())
+					idx, expectedName, info.Object.Name())
 			}
-			if info.SizeBytes != uint64(len(objectExampleContent)) {
-				t.Errorf("expected objects[%d] sizeBytes == %d, got %d",
-					idx, len(objectExampleContent), info.SizeBytes)
+
+			if info.SymlinkTarget == nil {
+				t.Errorf("expected objects[%d] symlinkTarget.Name() == %q, got symlinkTarget == nil",
+					idx, expectedTargetName)
+			} else if info.SymlinkTarget.Name() != expectedTargetName {
+				t.Errorf("expected objects[%d] symlinkTarget.Name() == %q, got %q",
+					idx, expectedTargetName, info.SymlinkTarget.Name())
 			}
-			if info.ContentType != "application/json" {
-				t.Errorf(`expected objects[%d] contentType == "application/json", got %q`,
+
+			if info.SizeBytes != 0 {
+				t.Errorf("expected objects[%d] sizeBytes == 0, got %d",
+					idx, info.SizeBytes)
+			}
+			if info.ContentType != "application/symlink" {
+				t.Errorf(`expected objects[%d] contentType == "application/symlink", got %q`,
 					idx, info.ContentType)
 			}
-			if info.Etag != objectExampleContentEtag {
+			emptyEtag := etagOf(nil)
+			if info.Etag != emptyEtag {
 				t.Errorf("expected objects[%d] etag == %q, got %q",
-					idx, objectExampleContentEtag, info.Etag)
+					idx, emptyEtag, info.Etag)
 			}
 			if info.LastModified.IsZero() {
 				t.Errorf("objects[%d].LastModified is zero", idx)
 			}
+			continue
+		}
+
+		//case 3: regular object
+		if info.Object == nil {
+			t.Errorf("expected objects[%d].Name() == %q, got object == nil",
+				idx, expectedNames[idx])
+		} else if info.Object.Name() != expectedNames[idx] {
+			t.Errorf("expected objects[%d].Name() == %q, got %q",
+				idx, expectedNames[idx], info.Object.Name())
+		}
+		if info.SizeBytes != uint64(len(objectExampleContent)) {
+			t.Errorf("expected objects[%d] sizeBytes == %d, got %d",
+				idx, len(objectExampleContent), info.SizeBytes)
+		}
+		if info.ContentType != "application/json" {
+			t.Errorf(`expected objects[%d] contentType == "application/json", got %q`,
+				idx, info.ContentType)
+		}
+		if info.Etag != objectExampleContentEtag {
+			t.Errorf("expected objects[%d] etag == %q, got %q",
+				idx, objectExampleContentEtag, info.Etag)
+		}
+		if info.LastModified.IsZero() {
+			t.Errorf("objects[%d].LastModified is zero", idx)
 		}
 	}
 }
