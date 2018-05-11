@@ -563,3 +563,11 @@ func (o *Object) InspectSymlink() (target *Object, headers ObjectHeaders, err er
 	target = targetAccount.Container(fields[0]).Object(fields[1])
 	return target, *o.symlinkHeaders, nil
 }
+
+//URL returns the canonical url for the object in the objectstore
+func (o *Object) URL() (string, error) {
+	return Request{
+		ContainerName: o.c.name,
+		ObjectName:    o.name,
+	}.URL(o.c.a.backend, nil)
+}
