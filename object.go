@@ -41,6 +41,11 @@ type Object struct {
 	symlinkHeaders *ObjectHeaders //from HEAD/GET with ?symlink=get
 }
 
+//IsEqualTo returns true if both Object instances refer to the same object.
+func (o *Object) IsEqualTo(other *Object) bool {
+	return other.name == o.name && other.c.IsEqualTo(o.c)
+}
+
 //Object returns a handle to the object with the given name within this
 //container. This function does not issue any HTTP requests, and therefore cannot
 //ensure that the object exists. Use the Exists() function to check for the
@@ -507,7 +512,7 @@ type SymlinkOptions struct {
 func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestOptions) error {
 	ropts = cloneRequestOptions(ropts, nil)
 	ropts.Headers.Set("X-Symlink-Target", target.FullName())
-	if !target.c.a.isEqualTo(o.c.a) {
+	if !target.c.a.IsEqualTo(o.c.a) {
 		ropts.Headers.Set("X-Symlink-Target-Account", target.c.a.Name())
 	}
 	if ropts.Headers.Get("Content-Type") == "" {
