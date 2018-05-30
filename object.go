@@ -93,7 +93,7 @@ func (o *Object) Exists() (bool, error) {
 //has not been cached yet, a HEAD request is issued on the object.
 //
 //For symlinks, this operation returns the metadata for the target object. Use
-//Object.InspectSymlink() to obtain the metadata for the symlink instead.
+//Object.SymlinkHeaders() to obtain the metadata for the symlink instead.
 //
 //This operation fails with http.StatusNotFound if the object does not exist.
 func (o *Object) Headers() (ObjectHeaders, error) {
@@ -526,29 +526,41 @@ func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestO
 	return o.Upload(nil, uopts, ropts)
 }
 
-//InspectSymlink returns the object that this symlink points to, and the
-//metadata of the symlink. ErrNotASymlink is returned if the object is not a
-//symlink.
+//SymlinkHeaders is similar to Headers, but if the object is a symlink, it
+//returns the metadata of the symlink rather than the metadata of the target.
+//It also returns a reference to the target object.
+//
+//If this object is not a symlink, Object.SymlinkHeaders() returns the same
+//ObjectHeaders as Object.Headers(), and a nil target object.
+//
+//In a nutshell, if Object.Headers() is like os.Stat(), then
+//Object.SymlinkHeaders() is like os.Lstat().
+//
+//If you do not know whether a given object is a symlink or not, it's a good
+//idea to call Object.SymlinkHeaders() first: If the object turns out not to be
+//a symlink, the cache for Object.Headers() has already been populated.
 //
 //This operation fails with http.StatusNotFound if the object does not exist.
-func (o *Object) InspectSymlink() (target *Object, headers ObjectHeaders, err error) {
+func (o *Object) SymlinkHeaders() (headers ObjectHeaders, target *Object, err error) {
 	if o.symlinkHeaders == nil {
 		o.symlinkHeaders, err = o.fetchHeaders(&RequestOptions{
 			Values: url.Values{"symlink": []string{"get"}},
 		})
 		if err != nil {
-			return nil, ObjectHeaders{}, err
+			return ObjectHeaders{}, nil, err
 		}
 	}
 
 	//is this a symlink?
 	targetFullName := o.symlinkHeaders.Get("X-Symlink-Target")
 	if targetFullName == "" {
-		return nil, ObjectHeaders{}, ErrNotASymlink
+		//not a symlink - the o.symlinkHeaders are just the regular headers
+		o.headers = o.symlinkHeaders
+		return *o.headers, nil, nil
 	}
 	fields := strings.SplitN(targetFullName, "/", 2)
 	if len(fields) < 2 {
-		return nil, ObjectHeaders{}, MalformedHeaderError{
+		return ObjectHeaders{}, nil, MalformedHeaderError{
 			Key:        "X-Symlink-Target",
 			ParseError: fmt.Errorf("expected \"container/object\", got \"%s\"", targetFullName),
 		}
@@ -561,5 +573,5 @@ func (o *Object) InspectSymlink() (target *Object, headers ObjectHeaders, err er
 		targetAccount = targetAccount.SwitchAccount(accountName)
 	}
 	target = targetAccount.Container(fields[0]).Object(fields[1])
-	return target, *o.symlinkHeaders, nil
+	return *o.symlinkHeaders, target, nil
 }
