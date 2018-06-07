@@ -581,7 +581,9 @@ func (o *Object) SymlinkHeaders() (headers ObjectHeaders, target *Object, err er
 	return *o.symlinkHeaders, target, nil
 }
 
-//URL returns the canonical url for the object in the objectstore
+//URL returns the canonical URL for the object on the server. This is
+//particularly useful when the ReadACL on the account or container is set to
+//allow anonymous read access.
 func (o *Object) URL() (string, error) {
 	return Request{
 		ContainerName: o.c.name,
