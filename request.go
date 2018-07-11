@@ -19,6 +19,7 @@
 package schwift
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -41,12 +42,14 @@ import (
 type RequestOptions struct {
 	Headers Headers
 	Values  url.Values
+	Context context.Context
 }
 
 func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptions {
 	result := RequestOptions{
 		Headers: make(Headers),
 		Values:  make(url.Values),
+		Context: orig.Context,
 	}
 	if orig != nil {
 		for k, v := range orig.Headers {
@@ -123,6 +126,9 @@ func (r Request) Do(backend Backend) (*http.Response, error) {
 	if r.Options != nil {
 		for k, v := range r.Options.Headers {
 			req.Header[k] = []string{v}
+		}
+		if r.Options.Context != nil {
+			req = req.WithContext(r.Options.Context)
 		}
 	}
 	if r.Body != nil {
