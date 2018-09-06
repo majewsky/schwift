@@ -143,9 +143,7 @@ func TestLargeObjectsBasic(t *testing.T) {
 func TestLargeObjectExpiration(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
-			segment1 := getRandomSegmentContent(128)
-			segment2 := getRandomSegmentContent(128)
-
+			segment := getRandomSegmentContent(128)
 			obj := c.Object(strategyStr + "-largeobject")
 			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
 				SegmentContainer: c,
@@ -159,7 +157,7 @@ func TestLargeObjectExpiration(t *testing.T) {
 			headers := schwift.NewObjectHeaders()
 			headers.ExpiresAt().Set(expirationTime)
 
-			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment1+segment2)), 128, headers.ToOpts()))
+			expectSuccess(t, lo.Append(bytes.NewReader([]byte(segment)), 128, headers.ToOpts()))
 			expectSuccess(t, lo.WriteManifest(headers.ToOpts()))
 
 			//check object expiration
@@ -169,6 +167,10 @@ func TestLargeObjectExpiration(t *testing.T) {
 			expectString(t, objectExpiration, expirationTime.Format("2006-01-02 15:04:05 +00:00 MST"))
 
 			//check segment expiration
+			hdr, err = c.Object(strategyStr + "-segments/0000000000000001").Headers()
+			expectSuccess(t, err)
+			objectExpiration = hdr.ExpiresAt().Get().Format("2006-01-02 15:04:05 +00:00 MST")
+			expectString(t, objectExpiration, expirationTime.Format("2006-01-02 15:04:05 +00:00 MST"))
 
 		})
 	})
