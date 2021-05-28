@@ -90,7 +90,7 @@ func TestObjectUpload(t *testing.T) {
 
 		//test upload with io.Writer
 		obj = c.Object("upload5")
-		err = obj.UploadWithWriter(nil, nil, func(w io.Writer) error {
+		err = obj.UploadFromWriter(nil, nil, func(w io.Writer) error {
 			_, err := w.Write(objectExampleContent)
 			return err
 		})
