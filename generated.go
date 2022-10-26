@@ -11,7 +11,7 @@ package schwift
 // AccountHeaders contains the headers for a schwift.Account instance.
 //
 // To read and write well-known headers, use the methods on this type.
-// To read and write arbitary headers, use the methods on the Headers supertype.
+// To read and write arbitrary headers, use the methods on the Headers supertype.
 type AccountHeaders struct {
 	Headers
 }
@@ -98,7 +98,7 @@ func (h AccountHeaders) CreatedAt() FieldUnixTimeReadonly {
 // ContainerHeaders contains the headers for a schwift.Container instance.
 //
 // To read and write well-known headers, use the methods on this type.
-// To read and write arbitary headers, use the methods on the Headers supertype.
+// To read and write arbitrary headers, use the methods on the Headers supertype.
 type ContainerHeaders struct {
 	Headers
 }
@@ -241,7 +241,7 @@ func (h ContainerHeaders) VersionsLocation() FieldString {
 // ObjectHeaders contains the headers for a schwift.Object instance.
 //
 // To read and write well-known headers, use the methods on this type.
-// To read and write arbitary headers, use the methods on the Headers supertype.
+// To read and write arbitrary headers, use the methods on the Headers supertype.
 type ObjectHeaders struct {
 	Headers
 }

@@ -28,7 +28,7 @@ import (
 // Users will typically use one of the subtypes (AccountHeaders,
 // ContainerHeaders, ObjectHeaders) instead, which provide type-safe access to
 // well-known headers. The http.Header-like interface on this type can be used
-// read and write arbitary headers. For example, the following calls are
+// read and write arbitrary headers. For example, the following calls are
 // equivalent:
 //
 //	h := make(AccountHeaders)
