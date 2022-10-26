@@ -1,3 +1,9 @@
+# v1.2.0 (TBD)
+
+Changes:
+
+- Digest signing now uses sha256 and sha512 (preference in that order) if enabled by swift.
+
 # v1.1.0 (2022-02-07)
 
 Bugfixes:

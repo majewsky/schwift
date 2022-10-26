@@ -74,6 +74,7 @@ type Capabilities struct {
 		AccountACLs bool `json:"account_acls"`
 	} `json:"tempauth"`
 	TempURL *struct {
+		AllowedDigests        []string `json:"allowed_digests"`
 		IncomingAllowHeaders  []string `json:"incoming_allow_headers"`
 		IncomingRemoveHeaders []string `json:"incoming_remove_headers"`
 		Methods               []string `json:"methods"`

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sync"
 )
 
 // Account represents a Swift account. Instances are usually obtained by
@@ -34,8 +35,9 @@ type Account struct {
 	baseURL string
 	name    string
 	//cache
-	headers *AccountHeaders
-	caps    *Capabilities
+	headers   *AccountHeaders
+	caps      *Capabilities
+	capsMutex sync.Mutex
 }
 
 // IsEqualTo returns true if both Account instances refer to the same account.
@@ -183,10 +185,10 @@ func (a *Account) Containers() *ContainerIterator {
 // Capabilities queries the GET /info endpoint of the Swift server providing
 // this account. Capabilities are cached, so the GET request will only be sent
 // once during the first call to this method.
-//
-// WARNING: This method is not thread-safe. Calling it concurrently on the same
-// object results in undefined behavior.
 func (a *Account) Capabilities() (Capabilities, error) {
+	a.capsMutex.Lock()
+	defer a.capsMutex.Unlock()
+
 	if a.caps != nil {
 		return *a.caps, nil
 	}

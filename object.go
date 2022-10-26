@@ -23,6 +23,8 @@ import (
 	"crypto/hmac"
 	"crypto/md5"  //nolint:gosec // Etag uses md5
 	"crypto/sha1" //nolint:gosec // Used by swift
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -609,6 +611,16 @@ func (o *Object) URL() (string, error) {
 	}.URL(o.c.a.backend, nil)
 }
 
+// Returns true if string is contained in slice
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 // TempURL is like Object.URL, but includes a token with a limited lifetime (as
 // specified by the `expires` argument) that permits anonymous access to this
 // object using the given HTTP method. This works only when the tempurl
@@ -645,8 +657,24 @@ func (o *Object) TempURL(key, method string, expires time.Time) (string, error) 
 		return "", err
 	}
 
+	capabilities, err := o.c.a.Capabilities()
+	if err != nil {
+		return "", err
+	}
+	allowedDigest := capabilities.TempURL.AllowedDigests
+
+	var mac hash.Hash
+	if contains(allowedDigest, "sha256") {
+		mac = hmac.New(sha256.New, []byte(key))
+	} else if contains(allowedDigest, "sha1") {
+		mac = hmac.New(sha1.New, []byte(key))
+	} else if contains(allowedDigest, "sha512") {
+		mac = hmac.New(sha512.New, []byte(key))
+	} else {
+		return "", fmt.Errorf("schwift only supports sha1, sha256 and sha512 digests but swift server only supports %s", strings.Join(allowedDigest, ", "))
+	}
+
 	payload := fmt.Sprintf("%s\n%d\n%s", method, expires.Unix(), u.Path)
-	mac := hmac.New(sha1.New, []byte(key))
 	mac.Write([]byte(payload))
 	signature := hex.EncodeToString(mac.Sum(nil))
 
