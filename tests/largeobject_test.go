@@ -36,7 +36,6 @@ func foreachLargeObjectStrategy(action func(schwift.LargeObjectStrategy, string)
 func TestLargeObjectsBasic(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
-
 			obj := c.Object(strategyStr + "-largeobject")
 			lo, err := obj.AsLargeObject()
 			expectError(t, err, schwift.ErrNotLarge.Error())
@@ -135,7 +134,6 @@ func TestLargeObjectsBasic(t *testing.T) {
 					Etag:      etagOfString(segment4),
 				},
 			})
-
 		})
 	})
 }

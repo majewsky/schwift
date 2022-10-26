@@ -30,6 +30,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
 	"github.com/gophercloud/utils/openstack/clientconfig"
+
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
 )

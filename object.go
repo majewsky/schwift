@@ -33,9 +33,9 @@ import (
 	"time"
 )
 
-//Object represents a Swift object. Instances are usually obtained by
-//traversing downwards from a container with Container.Object() or
-//Container.Objects().
+// Object represents a Swift object. Instances are usually obtained by
+// traversing downwards from a container with Container.Object() or
+// Container.Objects().
 type Object struct {
 	c    *Container
 	name string
@@ -44,27 +44,27 @@ type Object struct {
 	symlinkHeaders *ObjectHeaders //from HEAD/GET with ?symlink=get
 }
 
-//IsEqualTo returns true if both Object instances refer to the same object.
+// IsEqualTo returns true if both Object instances refer to the same object.
 func (o *Object) IsEqualTo(other *Object) bool {
 	return other.name == o.name && other.c.IsEqualTo(o.c)
 }
 
-//Object returns a handle to the object with the given name within this
-//container. This function does not issue any HTTP requests, and therefore cannot
-//ensure that the object exists. Use the Exists() function to check for the
-//object's existence.
+// Object returns a handle to the object with the given name within this
+// container. This function does not issue any HTTP requests, and therefore cannot
+// ensure that the object exists. Use the Exists() function to check for the
+// object's existence.
 func (c *Container) Object(name string) *Object {
 	return &Object{c: c, name: name}
 }
 
-//Container returns a handle to the container this object is stored in.
+// Container returns a handle to the container this object is stored in.
 func (o *Object) Container() *Container {
 	return o.c
 }
 
-//Name returns the object name. This does not parse the name in any way; if you
-//want only the basename portion of the object name, use package path from the
-//standard library in conjunction with this function. For example:
+// Name returns the object name. This does not parse the name in any way; if you
+// want only the basename portion of the object name, use package path from the
+// standard library in conjunction with this function. For example:
 //
 //	obj := account.Container("docs").Object("2018-02-10/invoice.pdf")
 //	obj.Name()            //returns "2018-02-10/invoice.pdf"
@@ -73,10 +73,10 @@ func (o *Object) Name() string {
 	return o.name
 }
 
-//FullName returns the container name and object name joined together with a
-//slash. This identifier is used by Swift in several places (large object
-//manifests, symlink targets, etc.) to refer to an object within an account.
-//For example:
+// FullName returns the container name and object name joined together with a
+// slash. This identifier is used by Swift in several places (large object
+// manifests, symlink targets, etc.) to refer to an object within an account.
+// For example:
 //
 //	obj := account.Container("docs").Object("2018-02-10/invoice.pdf")
 //	obj.Name()     //returns      "2018-02-10/invoice.pdf"
@@ -85,8 +85,8 @@ func (o *Object) FullName() string {
 	return o.c.name + "/" + o.name
 }
 
-//Exists checks if this object exists, potentially by issuing a HEAD request
-//if no Headers() have been cached yet.
+// Exists checks if this object exists, potentially by issuing a HEAD request
+// if no Headers() have been cached yet.
 func (o *Object) Exists() (bool, error) {
 	_, err := o.Headers()
 	if Is(err, http.StatusNotFound) {
@@ -97,16 +97,16 @@ func (o *Object) Exists() (bool, error) {
 	return true, nil
 }
 
-//Headers returns the ObjectHeaders for this object. If the ObjectHeaders
-//has not been cached yet, a HEAD request is issued on the object.
+// Headers returns the ObjectHeaders for this object. If the ObjectHeaders
+// has not been cached yet, a HEAD request is issued on the object.
 //
-//For symlinks, this operation returns the metadata for the target object. Use
-//Object.SymlinkHeaders() to obtain the metadata for the symlink instead.
+// For symlinks, this operation returns the metadata for the target object. Use
+// Object.SymlinkHeaders() to obtain the metadata for the symlink instead.
 //
-//This operation fails with http.StatusNotFound if the object does not exist.
+// This operation fails with http.StatusNotFound if the object does not exist.
 //
-//WARNING: This method is not thread-safe. Calling it concurrently on the same
-//object results in undefined behavior.
+// WARNING: This method is not thread-safe. Calling it concurrently on the same
+// object results in undefined behavior.
 func (o *Object) Headers() (ObjectHeaders, error) {
 	if o.headers != nil {
 		return *o.headers, nil
@@ -139,12 +139,12 @@ func (o *Object) fetchHeaders(opts *RequestOptions) (*ObjectHeaders, error) {
 	return &headers, headers.Validate()
 }
 
-//Update updates the object's headers using a POST request. To add URL
-//parameters, pass a non-nil *RequestOptions.
+// Update updates the object's headers using a POST request. To add URL
+// parameters, pass a non-nil *RequestOptions.
 //
-//This operation fails with http.StatusNotFound if the object does not exist.
+// This operation fails with http.StatusNotFound if the object does not exist.
 //
-//A successful POST request implies Invalidate() since it may change metadata.
+// A successful POST request implies Invalidate() since it may change metadata.
 func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 	_, err := Request{
 		Method:            "POST",
@@ -159,17 +159,17 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 	return err
 }
 
-//UploadOptions invokes advanced behavior in the Object.Upload() method.
+// UploadOptions invokes advanced behavior in the Object.Upload() method.
 type UploadOptions struct {
 	//When overwriting a large object, delete its segments. This will cause
 	//Upload() to call into BulkDelete(), so a BulkError may be returned.
 	DeleteSegments bool
 }
 
-//Upload creates the object using a PUT request.
+// Upload creates the object using a PUT request.
 //
-//If you do not have an io.Reader, but you have a []byte or string instance
-//containing the object, wrap it in a *bytes.Reader instance like so:
+// If you do not have an io.Reader, but you have a []byte or string instance
+// containing the object, wrap it in a *bytes.Reader instance like so:
 //
 //	var buffer []byte
 //	o.Upload(bytes.NewReader(buffer), opts)
@@ -178,29 +178,29 @@ type UploadOptions struct {
 //	var buffer string
 //	o.Upload(bytes.NewReader([]byte(buffer)), opts)
 //
-//If you have neither an io.Reader nor a []byte or string, but you have a
-//function that generates the object's content into an io.Writer, use
-//UploadFromWriter instead.
+// If you have neither an io.Reader nor a []byte or string, but you have a
+// function that generates the object's content into an io.Writer, use
+// UploadFromWriter instead.
 //
-//If the object is very large and you want to upload it in segments, use
-//LargeObject.Append() instead. See documentation on type LargeObject for
-//details.
+// If the object is very large and you want to upload it in segments, use
+// LargeObject.Append() instead. See documentation on type LargeObject for
+// details.
 //
-//If content is a *bytes.Reader or a *bytes.Buffer instance, the Content-Length
-//and Etag request headers will be computed automatically. Otherwise, it is
-//highly recommended that the caller set these headers (if possible) to allow
-//the server to check the integrity of the uploaded file.
+// If content is a *bytes.Reader or a *bytes.Buffer instance, the Content-Length
+// and Etag request headers will be computed automatically. Otherwise, it is
+// highly recommended that the caller set these headers (if possible) to allow
+// the server to check the integrity of the uploaded file.
 //
-//If Etag and/or Content-Length is supplied and the content does not match
-//these parameters, http.StatusUnprocessableEntity is returned. If Etag is not
-//supplied and cannot be computed in advance, Upload() will compute the Etag as
-//data is read from the io.Reader, and compare the result to the Etag returned
-//by Swift, returning ErrChecksumMismatch in case of mismatch. The object will
-//have been uploaded at that point, so you will usually want to Delete() it.
+// If Etag and/or Content-Length is supplied and the content does not match
+// these parameters, http.StatusUnprocessableEntity is returned. If Etag is not
+// supplied and cannot be computed in advance, Upload() will compute the Etag as
+// data is read from the io.Reader, and compare the result to the Etag returned
+// by Swift, returning ErrChecksumMismatch in case of mismatch. The object will
+// have been uploaded at that point, so you will usually want to Delete() it.
 //
-//This function can be used regardless of whether the object exists or not.
+// This function can be used regardless of whether the object exists or not.
 //
-//A successful PUT request implies Invalidate() since it may change metadata.
+// A successful PUT request implies Invalidate() since it may change metadata.
 func (o *Object) Upload(content io.Reader, opts *UploadOptions, ropts *RequestOptions) error {
 	if opts == nil {
 		opts = &UploadOptions{}
@@ -325,9 +325,9 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 	}
 }
 
-//UploadFromWriter is a variant of Upload that can be used when the object's
-//content is generated by some function or package that takes an io.Writer
-//instead of supplying an io.Reader. For example:
+// UploadFromWriter is a variant of Upload that can be used when the object's
+// content is generated by some function or package that takes an io.Writer
+// instead of supplying an io.Reader. For example:
 //
 //	func greeting(target io.Writer, name string) error {
 //	    _, err := fmt.Fprintf(target, "Hello %s!\n", name)
@@ -343,7 +343,7 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 //	    return err
 //	})
 //
-//If you do not need an io.Writer, always use Upload instead.
+// If you do not need an io.Writer, always use Upload instead.
 func (o *Object) UploadFromWriter(opts *UploadOptions, ropts *RequestOptions, callback func(io.Writer) error) error {
 	reader, writer := io.Pipe()
 	errChan := make(chan error)
@@ -356,19 +356,19 @@ func (o *Object) UploadFromWriter(opts *UploadOptions, ropts *RequestOptions, ca
 	return <-errChan
 }
 
-//DeleteOptions invokes advanced behavior in the Object.Delete() method.
+// DeleteOptions invokes advanced behavior in the Object.Delete() method.
 type DeleteOptions struct {
 	//When deleting a large object, also delete its segments. This will cause
 	//Delete() to call into BulkDelete(), so a BulkError may be returned.
 	DeleteSegments bool
 }
 
-//Delete deletes the object using a DELETE request. To add URL parameters,
-//pass a non-nil *RequestOptions.
+// Delete deletes the object using a DELETE request. To add URL parameters,
+// pass a non-nil *RequestOptions.
 //
-//This operation fails with http.StatusNotFound if the object does not exist.
+// This operation fails with http.StatusNotFound if the object does not exist.
 //
-//A successful DELETE request implies Invalidate().
+// A successful DELETE request implies Invalidate().
 func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
 	if opts == nil {
 		opts = &DeleteOptions{}
@@ -408,20 +408,20 @@ func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
 	return err
 }
 
-//Invalidate clears the internal cache of this Object instance. The next call
-//to Headers() on this instance will issue a HEAD request on the object.
+// Invalidate clears the internal cache of this Object instance. The next call
+// to Headers() on this instance will issue a HEAD request on the object.
 //
-//WARNING: This method is not thread-safe. Calling it concurrently on the same
-//object results in undefined behavior.
+// WARNING: This method is not thread-safe. Calling it concurrently on the same
+// object results in undefined behavior.
 func (o *Object) Invalidate() {
 	o.headers = nil
 	o.symlinkHeaders = nil
 }
 
-//Download retrieves the object's contents using a GET request. This returns a
-//helper object which allows you to select whether you want an io.ReadCloser
-//for reading the object contents progressively, or whether you want the object
-//contents collected into a byte slice or string.
+// Download retrieves the object's contents using a GET request. This returns a
+// helper object which allows you to select whether you want an io.ReadCloser
+// for reading the object contents progressively, or whether you want the object
+// contents collected into a byte slice or string.
 //
 //	reader, err := object.Download(nil).AsReadCloser()
 //
@@ -429,10 +429,10 @@ func (o *Object) Invalidate() {
 //
 //	str, err := object.Download(nil).AsString()
 //
-//See documentation on type DownloadedObject for details.
+// See documentation on type DownloadedObject for details.
 //
-//WARNING: This method is not thread-safe. Calling it concurrently on the same
-//object results in undefined behavior.
+// WARNING: This method is not thread-safe. Calling it concurrently on the same
+// object results in undefined behavior.
 func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 	resp, err := Request{
 		Method:            "GET",
@@ -457,7 +457,7 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 	return DownloadedObject{body, err}
 }
 
-//CopyOptions invokes advanced behavior in the Object.Copy() method.
+// CopyOptions invokes advanced behavior in the Object.Copy() method.
 type CopyOptions struct {
 	//Copy only the object's content, not its metadata. New metadata can always
 	//be supplied in the RequestOptions argument of Object.CopyTo().
@@ -466,10 +466,10 @@ type CopyOptions struct {
 	ShallowCopySymlinks bool
 }
 
-//CopyTo copies the object on the server side using a COPY request.
+// CopyTo copies the object on the server side using a COPY request.
 //
-//A successful COPY implies target.Invalidate() since it may change the
-//target's metadata.
+// A successful COPY implies target.Invalidate() since it may change the
+// target's metadata.
 func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions) error {
 	ropts = cloneRequestOptions(ropts, nil)
 	ropts.Headers.Set("Destination", target.FullName())
@@ -499,19 +499,19 @@ func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions
 	return err
 }
 
-//SymlinkOptions invokes advanced behavior in the Object.SymlinkTo() method.
+// SymlinkOptions invokes advanced behavior in the Object.SymlinkTo() method.
 type SymlinkOptions struct {
 	//When overwriting a large object, delete its segments. This will cause
 	//SymlinkTo() to call into BulkDelete(), so a BulkError may be returned.
 	DeleteSegments bool
 }
 
-//SymlinkTo creates the object as a symbolic link to another object using a PUT
-//request. Like Object.Upload(), this method works regardless of whether the
-//object already exists or not. Existing object contents will be overwritten by
-//this operation.
+// SymlinkTo creates the object as a symbolic link to another object using a PUT
+// request. Like Object.Upload(), this method works regardless of whether the
+// object already exists or not. Existing object contents will be overwritten by
+// this operation.
 //
-//A successful PUT request implies Invalidate() since it may change metadata.
+// A successful PUT request implies Invalidate() since it may change metadata.
 func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestOptions) error {
 	ropts = cloneRequestOptions(ropts, nil)
 	ropts.Headers.Set("X-Symlink-Target", target.FullName())
@@ -534,24 +534,24 @@ func (o *Object) SymlinkTo(target *Object, opts *SymlinkOptions, ropts *RequestO
 	return o.Upload(nil, uopts, ropts)
 }
 
-//SymlinkHeaders is similar to Headers, but if the object is a symlink, it
-//returns the metadata of the symlink rather than the metadata of the target.
-//It also returns a reference to the target object.
+// SymlinkHeaders is similar to Headers, but if the object is a symlink, it
+// returns the metadata of the symlink rather than the metadata of the target.
+// It also returns a reference to the target object.
 //
-//If this object is not a symlink, Object.SymlinkHeaders() returns the same
-//ObjectHeaders as Object.Headers(), and a nil target object.
+// If this object is not a symlink, Object.SymlinkHeaders() returns the same
+// ObjectHeaders as Object.Headers(), and a nil target object.
 //
-//In a nutshell, if Object.Headers() is like os.Stat(), then
-//Object.SymlinkHeaders() is like os.Lstat().
+// In a nutshell, if Object.Headers() is like os.Stat(), then
+// Object.SymlinkHeaders() is like os.Lstat().
 //
-//If you do not know whether a given object is a symlink or not, it's a good
-//idea to call Object.SymlinkHeaders() first: If the object turns out not to be
-//a symlink, the cache for Object.Headers() has already been populated.
+// If you do not know whether a given object is a symlink or not, it's a good
+// idea to call Object.SymlinkHeaders() first: If the object turns out not to be
+// a symlink, the cache for Object.Headers() has already been populated.
 //
-//This operation fails with http.StatusNotFound if the object does not exist.
+// This operation fails with http.StatusNotFound if the object does not exist.
 //
-//WARNING: This method is not thread-safe. Calling it concurrently on the same
-//object results in undefined behavior.
+// WARNING: This method is not thread-safe. Calling it concurrently on the same
+// object results in undefined behavior.
 func (o *Object) SymlinkHeaders() (headers ObjectHeaders, target *Object, err error) {
 	if o.symlinkHeaders == nil {
 		o.symlinkHeaders, err = o.fetchHeaders(&RequestOptions{
@@ -587,9 +587,9 @@ func (o *Object) SymlinkHeaders() (headers ObjectHeaders, target *Object, err er
 	return *o.symlinkHeaders, target, nil
 }
 
-//URL returns the canonical URL for the object on the server. This is
-//particularly useful when the ReadACL on the account or container is set to
-//allow anonymous read access.
+// URL returns the canonical URL for the object on the server. This is
+// particularly useful when the ReadACL on the account or container is set to
+// allow anonymous read access.
 func (o *Object) URL() (string, error) {
 	return Request{
 		ContainerName: o.c.name,
@@ -597,14 +597,14 @@ func (o *Object) URL() (string, error) {
 	}.URL(o.c.a.backend, nil)
 }
 
-//TempURL is like Object.URL, but includes a token with a limited lifetime (as
-//specified by the `expires` argument) that permits anonymous access to this
-//object using the given HTTP method. This works only when the tempurl
-//middleware is set up on the server, and if the given `key` matches one of the
-//tempurl keys for this object's container or account.
+// TempURL is like Object.URL, but includes a token with a limited lifetime (as
+// specified by the `expires` argument) that permits anonymous access to this
+// object using the given HTTP method. This works only when the tempurl
+// middleware is set up on the server, and if the given `key` matches one of the
+// tempurl keys for this object's container or account.
 //
-//For example, if the ReadACL both on the account and container do not permit
-//anonymous read access (which is the default behavior):
+// For example, if the ReadACL both on the account and container do not permit
+// anonymous read access (which is the default behavior):
 //
 //	var o *schwift.Object
 //	...
@@ -623,7 +623,6 @@ func (o *Object) URL() (string, error) {
 //	url := o.TempURL(key, "GET", time.Now().Add(10 * time.Minute))
 //	resp, err := http.Get(url)
 //	//This time, resp.StatusCode == 200 because the URL includes a token.
-//
 func (o *Object) TempURL(key, method string, expires time.Time) (string, error) {
 	urlStr, err := o.URL()
 	if err != nil {

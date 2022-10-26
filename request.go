@@ -27,18 +27,17 @@ import (
 	"strings"
 )
 
-//RequestOptions is used to pass additional headers and values to a request.
+// RequestOptions is used to pass additional headers and values to a request.
 //
-//When preparing a RequestOptions instance with additional headers, the
-//preferred way is to create an AccountHeaders, ContainerHeaders and
-//ObjectHeaders instance and use the type-safe API on these types. Then use the
-//ToOpts() method on that instance. For example:
+// When preparing a RequestOptions instance with additional headers, the
+// preferred way is to create an AccountHeaders, ContainerHeaders and
+// ObjectHeaders instance and use the type-safe API on these types. Then use the
+// ToOpts() method on that instance. For example:
 //
 //	hdr := NewObjectHeaders()
 //	hdr.ContentType().Set("image/png")
 //	hdr.Metadata().Set("color", "blue")
 //	opts := hdr.ToOpts() //type *schwift.RequestOptions
-//
 type RequestOptions struct {
 	Headers Headers
 	Values  url.Values
@@ -65,7 +64,7 @@ func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptio
 	return &result
 }
 
-//Request contains the parameters that can be set in a request to the Swift API.
+// Request contains the parameters that can be set in a request to the Swift API.
 type Request struct {
 	Method        string //"GET", "HEAD", "PUT", "POST" or "DELETE"
 	ContainerName string //empty for requests on accounts
@@ -80,7 +79,7 @@ type Request struct {
 	DrainResponseBody bool
 }
 
-//URL returns the full URL for this request.
+// URL returns the full URL for this request.
 func (r Request) URL(backend Backend, values url.Values) (string, error) {
 	uri, err := url.Parse(backend.EndpointURL())
 	if err != nil {
@@ -107,7 +106,7 @@ func (r Request) URL(backend Backend, values url.Values) (string, error) {
 	return uri.String(), nil
 }
 
-//Do executes this request on the given Backend.
+// Do executes this request on the given Backend.
 func (r Request) Do(backend Backend) (*http.Response, error) {
 	//build URL
 	var values url.Values

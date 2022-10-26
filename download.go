@@ -23,9 +23,9 @@ import (
 	"io/ioutil"
 )
 
-//DownloadedObject is returned by Object.Download(). It wraps the io.ReadCloser
-//from http.Response.Body with convenience methods for collecting the contents
-//into a byte slice or string.
+// DownloadedObject is returned by Object.Download(). It wraps the io.ReadCloser
+// from http.Response.Body with convenience methods for collecting the contents
+// into a byte slice or string.
 //
 //	var obj *swift.Object
 //
@@ -38,9 +38,9 @@ import (
 //	//Do this instead:
 //	str, err := obj.Download(nil).AsString()
 //
-//Since all methods on DownloadedObject are irreversible, the idiomatic way of
-//using DownloadedObject is to call one of its members immediately, without
-//storing the DownloadedObject instance in a variable first.
+// Since all methods on DownloadedObject are irreversible, the idiomatic way of
+// using DownloadedObject is to call one of its members immediately, without
+// storing the DownloadedObject instance in a variable first.
 //
 //	var obj *swift.Object
 //
@@ -55,13 +55,13 @@ type DownloadedObject struct {
 	err error
 }
 
-//AsReadCloser returns an io.ReadCloser containing the contents of the
-//downloaded object.
+// AsReadCloser returns an io.ReadCloser containing the contents of the
+// downloaded object.
 func (o DownloadedObject) AsReadCloser() (io.ReadCloser, error) {
 	return o.r, o.err
 }
 
-//AsByteSlice collects the contents of this downloaded object into a byte slice.
+// AsByteSlice collects the contents of this downloaded object into a byte slice.
 func (o DownloadedObject) AsByteSlice() ([]byte, error) {
 	if o.err != nil {
 		return nil, o.err
@@ -74,7 +74,7 @@ func (o DownloadedObject) AsByteSlice() ([]byte, error) {
 	return slice, closeErr
 }
 
-//AsString collects the contents of this downloaded object into a string.
+// AsString collects the contents of this downloaded object into a string.
 func (o DownloadedObject) AsString() (string, error) {
 	slice, err := o.AsByteSlice()
 	return string(slice), err
