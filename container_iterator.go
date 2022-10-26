@@ -126,7 +126,7 @@ func (i *ContainerIterator) NextPageDetailed(limit int) ([]ContainerInfo, error)
 		result[idx].LastModified, err = time.Parse(time.RFC3339Nano, data.LastModifiedStr+"Z")
 		if err != nil {
 			//this error is sufficiently obscure that we don't need to expose a type for it
-			return nil, fmt.Errorf("Bad field containers[%d].last_modified: %s", idx, err.Error())
+			return nil, fmt.Errorf("bad field containers[%d].last_modified: %s", idx, err.Error())
 		}
 	}
 

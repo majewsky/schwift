@@ -89,6 +89,5 @@ func TestAccountMetadata(t *testing.T) {
 		}
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "")
 		expectString(t, hdr.Metadata().Get("schwift-test2"), "changed")
-
 	})
 }

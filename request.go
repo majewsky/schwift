@@ -21,7 +21,6 @@ package schwift
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -169,7 +168,7 @@ func (r Request) Do(backend Backend) (*http.Response, error) {
 }
 
 func drainResponseBody(r *http.Response) error {
-	_, err := io.Copy(ioutil.Discard, r.Body)
+	_, err := io.Copy(io.Discard, r.Body)
 	if err != nil {
 		return err
 	}
@@ -177,7 +176,7 @@ func drainResponseBody(r *http.Response) error {
 }
 
 func collectResponseBody(r *http.Response) ([]byte, error) {
-	buf, err := ioutil.ReadAll(r.Body)
+	buf, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}

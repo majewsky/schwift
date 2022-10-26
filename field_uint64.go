@@ -97,9 +97,9 @@ func (f FieldUint64Readonly) Exists() bool {
 // Get returns the value for this header, or 0 if there is no value (or if it is
 // not a valid uint64).
 func (f FieldUint64Readonly) Get() uint64 {
-	return FieldUint64{f.h, f.k}.Get()
+	return FieldUint64(f).Get()
 }
 
 func (f FieldUint64Readonly) validate() error {
-	return FieldUint64{f.h, f.k}.validate()
+	return FieldUint64(f).validate()
 }

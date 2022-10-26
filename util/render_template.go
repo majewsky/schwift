@@ -23,14 +23,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"text/template"
 )
 
 func main() {
-	input, err := ioutil.ReadAll(os.Stdin)
+	input, err := io.ReadAll(os.Stdin)
 	failIfError(err)
 
 	sections := strings.SplitN(string(input), "\n---\n", 2)

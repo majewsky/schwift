@@ -20,7 +20,7 @@ package schwift
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // Etag uses md5
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -422,7 +422,6 @@ func (o *Object) AsNewLargeObject(sopts SegmentingOptions, topts *TruncateOption
 			}
 		case ErrNotLarge:
 			//not an error, continue down below
-			err = nil
 		default:
 			return nil, err //unexpected error
 		}
@@ -686,7 +685,7 @@ func (lo *LargeObject) Append(contents io.Reader, segmentSizeBytes int64, opts *
 
 		tracker := lengthAndEtagTrackingReader{
 			Reader: segment,
-			Hasher: md5.New(),
+			Hasher: md5.New(), //nolint:gosec // Etag uses md5
 		}
 
 		obj := lo.NextSegmentObject()

@@ -21,8 +21,8 @@ package schwift
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/md5"
-	"crypto/sha1"
+	"crypto/md5"  //nolint:gosec // Etag uses md5
+	"crypto/sha1" //nolint:gosec // Used by swift
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -128,7 +128,7 @@ func (o *Object) fetchHeaders(opts *RequestOptions) (*ObjectHeaders, error) {
 		Options:       opts,
 		//since Openstack LOVES to be inconsistent with everything (incl. itself),
 		//this returns 200 instead of 204
-		ExpectStatusCodes: []int{200},
+		ExpectStatusCodes: []int{http.StatusOK},
 		DrainResponseBody: true,
 	}.Do(o.c.a.backend)
 	if err != nil {
@@ -151,7 +151,7 @@ func (o *Object) Update(headers ObjectHeaders, opts *RequestOptions) error {
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           cloneRequestOptions(opts, headers.Headers),
-		ExpectStatusCodes: []int{202},
+		ExpectStatusCodes: []int{http.StatusAccepted},
 	}.Do(o.c.a.backend)
 	if err == nil {
 		o.Invalidate()
@@ -223,11 +223,14 @@ func (o *Object) Upload(content io.Reader, opts *UploadOptions, ropts *RequestOp
 
 	var hasher hash.Hash
 	if !isManifestUpload {
-		tryComputeEtag(content, hdr)
+		err := tryComputeEtag(content, hdr)
+		if err != nil {
+			return err
+		}
 
 		//could not compute Etag in advance -> need to check on the fly
 		if !hdr.Etag().Exists() {
-			hasher = md5.New()
+			hasher = md5.New() //nolint:gosec // Etag uses md5
 			if content != nil {
 				content = io.TeeReader(content, hasher)
 			}
@@ -301,10 +304,11 @@ func tryComputeContentLength(content io.Reader) *uint64 {
 	return nil
 }
 
-func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
+//nolint:gosec // Etag uses md5
+func tryComputeEtag(content io.Reader, headers ObjectHeaders) error {
 	h := headers.Etag()
 	if h.Exists() {
-		return
+		return nil
 	}
 	switch r := content.(type) {
 	case nil:
@@ -318,11 +322,19 @@ func tryComputeEtag(content io.Reader, headers ObjectHeaders) {
 	case io.ReadSeeker:
 		//bytes.Reader does not have such a method, but it is an io.Seeker, so we
 		//can read the entire thing and then seek back to where we started
-		hash := md5.New()
-		n, _ := io.Copy(hash, r)
-		r.Seek(-n, io.SeekCurrent)
-		h.Set(hex.EncodeToString(hash.Sum(nil)))
+		md5Hash := md5.New()
+		n, err := io.Copy(md5Hash, r)
+		if err != nil {
+			return err
+		}
+		_, err = r.Seek(-n, io.SeekCurrent)
+		if err != nil {
+			return err
+		}
+		h.Set(hex.EncodeToString(md5Hash.Sum(nil)))
 	}
+
+	return nil
 }
 
 // UploadFromWriter is a variant of Upload that can be used when the object's
@@ -400,7 +412,7 @@ func (o *Object) Delete(opts *DeleteOptions, ropts *RequestOptions) error {
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           ropts,
-		ExpectStatusCodes: []int{204},
+		ExpectStatusCodes: []int{http.StatusNoContent},
 	}.Do(o.c.a.backend)
 	if err == nil {
 		o.Invalidate()
@@ -439,7 +451,7 @@ func (o *Object) Download(opts *RequestOptions) DownloadedObject {
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           opts,
-		ExpectStatusCodes: []int{200},
+		ExpectStatusCodes: []int{http.StatusOK},
 	}.Do(o.c.a.backend)
 	var body io.ReadCloser
 	if err == nil {
@@ -490,7 +502,7 @@ func (o *Object) CopyTo(target *Object, opts *CopyOptions, ropts *RequestOptions
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           ropts,
-		ExpectStatusCodes: []int{201},
+		ExpectStatusCodes: []int{http.StatusCreated},
 		DrainResponseBody: true,
 	}.Do(o.c.a.backend)
 	if err == nil {

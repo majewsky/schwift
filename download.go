@@ -20,7 +20,6 @@ package schwift
 
 import (
 	"io"
-	"io/ioutil"
 )
 
 // DownloadedObject is returned by Object.Download(). It wraps the io.ReadCloser
@@ -31,7 +30,7 @@ import (
 //
 //	//Do NOT do this!
 //	reader, err := obj.Download(nil).AsReadCloser()
-//	bytes, err := ioutil.ReadAll(reader)
+//	bytes, err := io.ReadAll(reader)
 //	err := reader.Close()
 //	str := string(bytes)
 //
@@ -66,12 +65,12 @@ func (o DownloadedObject) AsByteSlice() ([]byte, error) {
 	if o.err != nil {
 		return nil, o.err
 	}
-	slice, err := ioutil.ReadAll(o.r)
+	slice, err := io.ReadAll(o.r)
 	closeErr := o.r.Close()
 	if err == nil {
 		err = closeErr
 	}
-	return slice, closeErr
+	return slice, err
 }
 
 // AsString collects the contents of this downloaded object into a string.

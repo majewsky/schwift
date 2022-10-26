@@ -41,7 +41,6 @@ package gopherschwift
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gophercloud/gophercloud"
@@ -107,7 +106,7 @@ func (g *backend) do(req *http.Request, afterReauth bool) (*http.Response, error
 
 	//detect expired token
 	if resp.StatusCode == http.StatusUnauthorized && !afterReauth {
-		_, err := io.Copy(ioutil.Discard, resp.Body)
+		_, err := io.Copy(io.Discard, resp.Body)
 		if err != nil {
 			return nil, err
 		}

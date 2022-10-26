@@ -63,7 +63,6 @@ func TestContainerLifecycle(t *testing.T) {
 
 func TestContainerUpdate(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-
 		hdr, err := c.Headers()
 		expectSuccess(t, err)
 		expectBool(t, hdr.ObjectCount().Exists(), true)
@@ -80,7 +79,6 @@ func TestContainerUpdate(t *testing.T) {
 		expectSuccess(t, err)
 		expectUint64(t, hdr.BytesUsedQuota().Get(), 42)
 		expectUint64(t, hdr.ObjectCountQuota().Get(), 23)
-
 	})
 }
 

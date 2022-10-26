@@ -155,13 +155,13 @@ func (i *ObjectIterator) NextPageDetailed(limit int) ([]ObjectInfo, error) {
 			result[idx].LastModified, err = time.Parse(time.RFC3339Nano, data.LastModifiedStr+"Z")
 			if err != nil {
 				//this error is sufficiently obscure that we don't need to expose a type for it
-				return nil, fmt.Errorf("Bad field objects[%d].last_modified: %s", idx, err.Error())
+				return nil, fmt.Errorf("bad field objects[%d].last_modified: %s", idx, err.Error())
 			}
 			if data.SymlinkPath != "" {
 				match := symlinkPathRx.FindStringSubmatch(data.SymlinkPath)
 				if match == nil {
 					//like above
-					return nil, fmt.Errorf("Bad field objects[%d].symlink_path: %q", idx, data.SymlinkPath)
+					return nil, fmt.Errorf("bad field objects[%d].symlink_path: %q", idx, data.SymlinkPath)
 				}
 				a := i.Container.a
 				if a.Name() != match[1] {

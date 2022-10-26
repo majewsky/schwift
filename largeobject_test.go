@@ -20,7 +20,7 @@ package schwift
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"testing"
 )
 
@@ -89,7 +89,7 @@ func TestSegmentingReader(t *testing.T) {
 				t.Errorf("expected segment %q, but NextSegment() returned nil", expected)
 				break
 			}
-			actual, err := ioutil.ReadAll(segment)
+			actual, err := io.ReadAll(segment)
 			if err != nil {
 				t.Errorf("expected segment %q, but got read error %q", expected, err.Error())
 				break
@@ -101,8 +101,8 @@ func TestSegmentingReader(t *testing.T) {
 
 		segment := sr.NextSegment()
 		if segment != nil {
-			actual, err := ioutil.ReadAll(segment)
-			if err == nil {
+			actual, err := io.ReadAll(segment)
+			if err != nil {
 				t.Errorf("expected no more segments, but got segment producing read error %q", err.Error())
 			} else {
 				t.Errorf("expected no more segments, but got %q", string(actual))

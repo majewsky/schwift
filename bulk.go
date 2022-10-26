@@ -142,7 +142,7 @@ func makeBulkObjectError(fullName string, statusCode int) BulkObjectError {
 // The objects may be located in multiple containers, but they and the
 // containers must all be located in the given account. (Otherwise,
 // ErrAccountMismatch is returned.)
-func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *RequestOptions) (numDeleted int, numNotFound int, deleteError error) {
+func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *RequestOptions) (numDeleted, numNotFound int, deleteError error) {
 	//validate that all given objects are in this account
 	for _, obj := range objects {
 		if !a.IsEqualTo(obj.Container().Account()) {
@@ -202,12 +202,8 @@ func (a *Account) BulkDelete(objects []*Object, containers []*Container, opts *R
 
 // Implementation of BulkDelete() for servers that *do not* support bulk
 // deletion.
-func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, opts *RequestOptions) (int, int, error) {
-	var (
-		numDeleted  = 0
-		numNotFound = 0
-		errs        []BulkObjectError
-	)
+func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, opts *RequestOptions) (numDeleted, numNotFound int, err error) {
+	var errs []BulkObjectError
 
 	handleSingleError := func(containerName, objectName string, err error) error {
 		if err == nil {
@@ -259,7 +255,7 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, o
 // Implementation of BulkDelete() for servers that *do* support bulk deletion.
 // This function is called *after* chunking, so `len(names) <=
 // account.Capabilities.BulkDelete.MaximumDeletesPerRequest`.
-func (a *Account) bulkDelete(names []string, opts *RequestOptions) (int, int, error) {
+func (a *Account) bulkDelete(names []string, opts *RequestOptions) (numDeleted, numNotFound int, err error) {
 	req := Request{
 		Method:            "DELETE",
 		Body:              strings.NewReader(strings.Join(names, "\n") + "\n"),

@@ -162,9 +162,9 @@ func (f FieldUnixTimeReadonly) Exists() bool {
 // Get returns the value for this header, or the zero value if there is no value
 // (or if it is not a valid timestamp).
 func (f FieldUnixTimeReadonly) Get() time.Time {
-	return FieldUnixTime{f.h, f.k}.Get()
+	return FieldUnixTime(f).Get()
 }
 
 func (f FieldUnixTimeReadonly) validate() error {
-	return FieldUnixTime{f.h, f.k}.validate()
+	return FieldUnixTime(f).validate()
 }

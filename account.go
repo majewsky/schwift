@@ -212,7 +212,7 @@ func (a *Account) Capabilities() (Capabilities, error) {
 func (a *Account) RawCapabilities() ([]byte, error) {
 	//This method is the only one in Schwift that bypasses struct Request since
 	//the request URL is not below the endpoint URL.
-	req, err := http.NewRequest("GET", a.baseURL+"info", nil)
+	req, err := http.NewRequest(http.MethodGet, a.baseURL+"info", http.NoBody)
 	if err != nil {
 		return nil, err
 	}

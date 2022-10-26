@@ -70,7 +70,7 @@ func TestFieldTimestamp(t *testing.T) {
 		expectBool(t, hdr.CreatedAt().Exists(), true)
 
 		actual := float64(hdr.CreatedAt().Get().UnixNano()) / 1e9
-		expected, _ := strconv.ParseFloat(hdr.Headers["X-Timestamp"], 64)
+		expected, _ := strconv.ParseFloat(hdr.Headers["X-Timestamp"], 64) //nolint:errcheck
 		expectFloat64(t, actual, expected)
 	})
 
@@ -100,7 +100,7 @@ func TestFieldHTTPTimestamp(t *testing.T) {
 		expectBool(t, hdr.UpdatedAt().Exists(), true)
 
 		actual := hdr.UpdatedAt().Get()
-		expected, _ := http.ParseTime(hdr.Get("Last-Modified"))
+		expected, _ := http.ParseTime(hdr.Get("Last-Modified")) //nolint:errcheck
 		expectInt64(t, actual.Unix(), expected.Unix())
 	})
 
