@@ -24,7 +24,6 @@ import (
 	"crypto/md5"  //nolint:gosec // Etag uses md5
 	"crypto/sha1" //nolint:gosec // Used by swift
 	"crypto/sha256"
-	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -668,10 +667,8 @@ func (o *Object) TempURL(key, method string, expires time.Time) (string, error) 
 		mac = hmac.New(sha256.New, []byte(key))
 	} else if contains(allowedDigest, "sha1") {
 		mac = hmac.New(sha1.New, []byte(key))
-	} else if contains(allowedDigest, "sha512") {
-		mac = hmac.New(sha512.New, []byte(key))
 	} else {
-		return "", fmt.Errorf("schwift only supports sha1, sha256 and sha512 digests but swift server only supports %s", strings.Join(allowedDigest, ", "))
+		return "", fmt.Errorf("schwift supports sha1 and sha256 digests but the Swift server only supports: %s", strings.Join(allowedDigest, ", "))
 	}
 
 	payload := fmt.Sprintf("%s\n%d\n%s", method, expires.Unix(), u.Path)
