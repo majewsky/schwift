@@ -36,9 +36,8 @@ func foreachLargeObjectStrategy(action func(schwift.LargeObjectStrategy, string)
 func TestLargeObjectsBasic(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		foreachLargeObjectStrategy(func(strategy schwift.LargeObjectStrategy, strategyStr string) {
-
 			obj := c.Object(strategyStr + "-largeobject")
-			lo, err := obj.AsLargeObject()
+			_, err := obj.AsLargeObject()
 			expectError(t, err, schwift.ErrNotLarge.Error())
 
 			segment1 := getRandomSegmentContent(128)
@@ -47,7 +46,7 @@ func TestLargeObjectsBasic(t *testing.T) {
 			segment4 := getRandomSegmentContent(128)
 
 			//basic write example
-			lo, err = obj.AsNewLargeObject(schwift.SegmentingOptions{
+			lo, err := obj.AsNewLargeObject(schwift.SegmentingOptions{
 				SegmentContainer: c,
 				SegmentPrefix:    strategyStr + "-segments/",
 				Strategy:         strategy,
@@ -135,7 +134,6 @@ func TestLargeObjectsBasic(t *testing.T) {
 					Etag:      etagOfString(segment4),
 				},
 			})
-
 		})
 	})
 }
@@ -171,7 +169,6 @@ func TestLargeObjectExpiration(t *testing.T) {
 			expectSuccess(t, err)
 			objectExpiration = hdr.ExpiresAt().Get().Format("2006-01-02 15:04:05 +00:00 MST")
 			expectString(t, objectExpiration, expirationTime.Format("2006-01-02 15:04:05 +00:00 MST"))
-
 		})
 	})
 }
@@ -212,7 +209,6 @@ func TestTruncateDuringOverwrite(t *testing.T) {
 
 			expectObjectExistence(t, c.Object("segments/0000000000000001"), false)
 			expectObjectExistence(t, c.Object("segments/0000000000000002"), false)
-
 		})
 	})
 }

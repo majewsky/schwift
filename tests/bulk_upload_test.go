@@ -62,7 +62,7 @@ func TestBulkUploadArchiveError(t *testing.T) {
 		)
 		expectInt(t, n, 0)
 		expectError(t, err, "400 Bad Request: Invalid Tar File: truncated header")
-		bulkErr := err.(schwift.BulkError)
+		bulkErr := err.(schwift.BulkError) //nolint:errcheck
 		expectInt(t, bulkErr.StatusCode, 400)
 		expectString(t, bulkErr.OverallError, "Invalid Tar File: truncated header")
 		expectInt(t, len(bulkErr.ObjectErrors), 0)
@@ -87,7 +87,7 @@ func TestBulkUploadObjectError(t *testing.T) {
 		)
 		expectInt(t, n, 1)
 		expectError(t, err, "400 Bad Request (+1 object errors)")
-		bulkErr := err.(schwift.BulkError)
+		bulkErr := err.(schwift.BulkError) //nolint:errcheck
 		expectInt(t, len(bulkErr.ObjectErrors), 1)
 		expectString(t, bulkErr.ObjectErrors[0].ContainerName, c.Name())
 		expectInt(t, bulkErr.ObjectErrors[0].StatusCode, 400)

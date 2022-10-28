@@ -21,7 +21,6 @@ package tests
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -63,7 +62,6 @@ func TestObjectLifecycle(t *testing.T) {
 
 func TestObjectUpload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-
 		//test upload with bytes.Reader
 		obj := c.Object("upload1")
 		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
@@ -152,7 +150,7 @@ func TestObjectDownload(t *testing.T) {
 		_, err = reader.Read(buf)
 		expectSuccess(t, err)
 		expectString(t, string(buf), string(objectExampleContent[4:8]))
-		buf, err = ioutil.ReadAll(reader)
+		buf, err = io.ReadAll(reader)
 		expectSuccess(t, err)
 		expectString(t, string(buf), string(objectExampleContent[8:]))
 	})

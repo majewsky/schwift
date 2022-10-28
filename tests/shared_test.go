@@ -19,7 +19,7 @@
 package tests
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // Etag uses md5
 	"crypto/rand"
 	"encoding/hex"
 	"math"
@@ -30,6 +30,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
 	"github.com/gophercloud/utils/openstack/clientconfig"
+
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
 )
@@ -106,7 +107,7 @@ func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
 ////////////////////////////////////////////////////////////////////////////////
 
 func etagOf(buf []byte) string {
-	hash := md5.Sum(buf)
+	hash := md5.Sum(buf) //nolint:gosec // Etag uses md5
 	return hex.EncodeToString(hash[:])
 }
 
@@ -123,7 +124,7 @@ func getRandomName() string {
 	return hex.EncodeToString(buf[:])
 }
 
-func getRandomSegmentContent(length int) string {
+func getRandomSegmentContent(length int) string { //nolint:unparam
 	buf := make([]byte, length/2)
 	_, err := rand.Read(buf)
 	if err != nil {
@@ -176,17 +177,13 @@ func expectString(t *testing.T, actual, expected string) {
 	}
 }
 
-func expectError(t *testing.T, actual error, expected string) (ok bool) {
+func expectError(t *testing.T, actual error, expected string) {
 	t.Helper()
 	if actual == nil {
 		t.Errorf("expected error %q, got no error\n", expected)
-		return false
-	}
-	if expected != actual.Error() {
+	} else if expected != actual.Error() {
 		t.Errorf("expected error %q, got %q instead\n", expected, actual.Error())
-		return false
 	}
-	return true
 }
 
 func expectSuccess(t *testing.T, actual error) (ok bool) {
@@ -198,7 +195,7 @@ func expectSuccess(t *testing.T, actual error) (ok bool) {
 	return true
 }
 
-func expectHeaders(t *testing.T, actual map[string]string, expected map[string]string) {
+func expectHeaders(t *testing.T, actual, expected map[string]string) {
 	t.Helper()
 	reported := make(map[string]bool)
 
