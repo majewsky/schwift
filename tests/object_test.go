@@ -20,6 +20,7 @@ package tests
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -41,14 +42,14 @@ func TestObjectLifecycle(t *testing.T) {
 		expectObjectExistence(t, o, false)
 
 		_, err := o.Headers()
-		expectError(t, err, "expected 200 response, got 404 instead")
+		expectError(t, err, fmt.Sprintf("could not HEAD %q in Swift: expected 200 response, got 404 instead", o.FullName()))
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
 		err = o.Delete(nil, nil)
-		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
+		expectError(t, err, fmt.Sprintf("could not DELETE %q in Swift: expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>", o.FullName()))
 
 		err = o.Upload(bytes.NewReader([]byte("test")), nil, nil)
 		expectSuccess(t, err)
@@ -165,7 +166,7 @@ func TestObjectUpdate(t *testing.T) {
 		newHeaders.ContentType().Set("application/json")
 		err := obj.Update(newHeaders, nil)
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
-		expectError(t, err, "expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
+		expectError(t, err, fmt.Sprintf("could not POST %q in Swift: expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>", obj.FullName()))
 
 		//create object
 		err = obj.Upload(nil, nil, nil)

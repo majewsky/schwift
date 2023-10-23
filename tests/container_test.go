@@ -19,6 +19,7 @@
 package tests
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -40,14 +41,14 @@ func TestContainerLifecycle(t *testing.T) {
 		expectBool(t, exists, false)
 
 		_, err = c.Headers()
-		expectError(t, err, "expected 204 response, got 404 instead")
+		expectError(t, err, fmt.Sprintf("could not HEAD %q in Swift: expected 204 response, got 404 instead", containerName))
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
 
 		//DELETE should be idempotent and not return success on non-existence, but
 		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
 		err = c.Delete(nil)
-		expectError(t, err, "expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>")
+		expectError(t, err, fmt.Sprintf("could not DELETE %q in Swift: expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>", containerName))
 
 		err = c.Create(nil)
 		expectSuccess(t, err)

@@ -60,6 +60,8 @@ var (
 // a response with the expected successful status code. The actual status code
 // can be checked with the Is() function; see documentation over there.
 type UnexpectedStatusCodeError struct {
+	Method              string //e.g. http.MethodGet
+	Target              string //either "<account>" or "$CONTAINER_NAME" or "$CONTAINER_NAME/$OBJECT_NAME"
 	ExpectedStatusCodes []int
 	ActualResponse      *http.Response
 	ResponseBody        []byte
@@ -75,6 +77,11 @@ func (e UnexpectedStatusCodeError) Error() string {
 		strings.Join(codeStrs, "/"),
 		e.ActualResponse.StatusCode,
 	)
+	if e.Method != "" && e.Target != "" {
+		//NOTE: Method and Target were added in a minor version change,
+		//and may not be filled if `e` was constructed outside the library.
+		msg = fmt.Sprintf("could not %s %q in Swift: %s", e.Method, e.Target, msg)
+	}
 	if len(e.ResponseBody) > 0 {
 		msg += ": " + string(e.ResponseBody)
 	}
