@@ -40,7 +40,7 @@ import (
 type RequestOptions struct {
 	Headers Headers
 	Values  url.Values
-	Context context.Context
+	Context context.Context //nolint: containedctx // ignored for now to not break the API
 }
 
 func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptions {

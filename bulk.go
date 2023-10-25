@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	"github.com/majewsky/schwift/capabilities"
+	"github.com/majewsky/schwift/internal/errext"
 )
 
 // BulkUploadFormat enumerates possible archive formats for Container.BulkUpload().
@@ -214,7 +215,7 @@ func (a *Account) bulkDeleteSingle(objects []*Object, containers []*Container, o
 			numNotFound++
 			return nil
 		}
-		if statusErr, ok := err.(UnexpectedStatusCodeError); ok {
+		if statusErr, ok := errext.As[UnexpectedStatusCodeError](err); ok {
 			errs = append(errs, BulkObjectError{
 				ContainerName: containerName,
 				ObjectName:    objectName,
