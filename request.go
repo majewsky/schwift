@@ -40,7 +40,6 @@ import (
 type RequestOptions struct {
 	Headers Headers
 	Values  url.Values
-	Context context.Context
 }
 
 func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptions {
@@ -55,7 +54,6 @@ func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptio
 		for k, v := range orig.Values {
 			result.Values[k] = v
 		}
-		result.Context = orig.Context
 	}
 	for k, v := range additional {
 		result.Headers[k] = v
@@ -105,8 +103,13 @@ func (r Request) URL(backend Backend, values url.Values) (string, error) {
 	return uri.String(), nil
 }
 
-// Do executes this request on the given Backend.
+// Do executes this request on the given Backend
 func (r Request) Do(backend Backend) (*http.Response, error) {
+	return r.DoWithContext(context.Background(), backend)
+}
+
+// DoWithContext executes this request on the given Backend with the given context
+func (r Request) DoWithContext(ctx context.Context, backend Backend) (*http.Response, error) {
 	//build URL
 	var values url.Values
 	if r.Options != nil {
@@ -127,9 +130,7 @@ func (r Request) Do(backend Backend) (*http.Response, error) {
 		for k, v := range r.Options.Headers {
 			req.Header[k] = []string{v}
 		}
-		if r.Options.Context != nil {
-			req = req.WithContext(r.Options.Context)
-		}
+		req = req.WithContext(ctx)
 	}
 	if r.Body != nil {
 		req.Header.Set("Expect", "100-continue")
