@@ -148,7 +148,7 @@ func (r Request) Do(backend Backend) (*http.Response, error) {
 	for _, code := range r.ExpectStatusCodes {
 		if code == resp.StatusCode {
 			var err error
-			if r.DrainResponseBody || resp.StatusCode == 204 {
+			if r.DrainResponseBody || resp.StatusCode == http.StatusNoContent {
 				err = drainResponseBody(resp)
 			}
 			return resp, err

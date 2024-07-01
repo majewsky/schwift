@@ -669,11 +669,12 @@ func (o *Object) TempURL(key, method string, expires time.Time) (string, error) 
 	allowedDigest := capabilities.TempURL.AllowedDigests
 
 	var mac hash.Hash
-	if contains(allowedDigest, "sha256") {
+	switch {
+	case contains(allowedDigest, "sha256"):
 		mac = hmac.New(sha256.New, []byte(key))
-	} else if contains(allowedDigest, "sha1") {
+	case contains(allowedDigest, "sha1"):
 		mac = hmac.New(sha1.New, []byte(key))
-	} else {
+	default:
 		return "", fmt.Errorf("schwift supports sha1 and sha256 digests but the Swift server only supports: %s", strings.Join(allowedDigest, ", "))
 	}
 
