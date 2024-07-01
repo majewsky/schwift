@@ -46,4 +46,4 @@ func TestParseAccountHeadersSuccess(t *testing.T) {
 	expectString(t, headers.Metadata().Get("FOO"), "bar")
 }
 
-//TODO TestParseAccountHeadersError
+// TODO TestParseAccountHeadersError

@@ -43,7 +43,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 	var client *gophercloud.ServiceClient
 
 	if stAuth == "" && stUser == "" && stKey == "" {
-		//option 1: Keystone authentication
+		// option 1: Keystone authentication
 		provider, err := clientconfig.AuthenticatedClient(context.TODO(), nil)
 		if err != nil {
 			t.Errorf("clientconfig.AuthenticatedClient returned: " + err.Error())
@@ -56,7 +56,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 			return
 		}
 	} else {
-		//option 2: Swift authentication v1
+		// option 2: Swift authentication v1
 		provider, err := openstack.NewClient(stAuth)
 		if err != nil {
 			t.Errorf("openstack.NewClient returned: " + err.Error())
@@ -92,7 +92,7 @@ func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
 
 		testCode(container)
 
-		//cleanup
+		// cleanup
 		exists, err := container.Exists()
 		expectSuccess(t, err)
 		if exists {

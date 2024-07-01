@@ -36,7 +36,7 @@ func TestObjectIterator(t *testing.T) {
 			return fmt.Sprintf("schwift-test-listing%d", idx)
 		}
 
-		//create test objects that can be listed
+		// create test objects that can be listed
 		for idx := 1; idx <= 4; idx++ {
 			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
@@ -44,7 +44,7 @@ func TestObjectIterator(t *testing.T) {
 			expectSuccess(t, err)
 		}
 
-		//test iteration with empty last page
+		// test iteration with empty last page
 		iter := c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		os, err := iter.NextPage(2)
@@ -60,7 +60,7 @@ func TestObjectIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectNames(t, os)
 
-		//test iteration with partial last page
+		// test iteration with partial last page
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		os, err = iter.NextPage(3)
@@ -73,7 +73,7 @@ func TestObjectIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectNames(t, os)
 
-		//test detailed iteration
+		// test detailed iteration
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		ois, err := iter.NextPageDetailed(2)
@@ -89,7 +89,7 @@ func TestObjectIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois)
 
-		//test Foreach
+		// test Foreach
 		c.Invalidate()
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
@@ -102,7 +102,7 @@ func TestObjectIterator(t *testing.T) {
 		expectInt(t, idx, 4)
 		expectContainerHeadersCached(t, c)
 
-		//test ForeachDetailed
+		// test ForeachDetailed
 		c.Invalidate()
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
@@ -115,14 +115,14 @@ func TestObjectIterator(t *testing.T) {
 		expectInt(t, idx, 4)
 		expectContainerHeadersCached(t, c)
 
-		//test Collect
+		// test Collect
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		os, err = iter.Collect()
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(1), oname(2), oname(3), oname(4))
 
-		//test CollectDetailed
+		// test CollectDetailed
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		ois, err = iter.CollectDetailed()
@@ -133,7 +133,7 @@ func TestObjectIterator(t *testing.T) {
 
 func TestPseudoDirectories(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		//create test objects that can be listed
+		// create test objects that can be listed
 		objectNames := []string{
 			"foo/1",
 			"foo/2",
@@ -150,7 +150,7 @@ func TestPseudoDirectories(t *testing.T) {
 			expectSuccess(t, err)
 		}
 
-		//test iteration with Delimiter and no Prefix
+		// test iteration with Delimiter and no Prefix
 		iter := c.Objects()
 		iter.Delimiter = "/"
 		os, err := iter.Collect()
@@ -163,7 +163,7 @@ func TestPseudoDirectories(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, "subdir:foo/")
 
-		//test iteration with Delimited and Prefix
+		// test iteration with Delimited and Prefix
 		iter = c.Objects()
 		iter.Prefix = "foo/"
 		iter.Delimiter = "/"
@@ -182,7 +182,7 @@ func TestPseudoDirectories(t *testing.T) {
 
 func TestObjectIteratorWithSymlinks(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		//create test objects that can be listed
+		// create test objects that can be listed
 		objectNames := []string{
 			"foo/1",
 			"foo/3",
@@ -194,7 +194,7 @@ func TestObjectIteratorWithSymlinks(t *testing.T) {
 			expectSuccess(t, err)
 		}
 
-		//create a test symlink
+		// create a test symlink
 		expectSuccess(t, c.Object("foo/2").SymlinkTo(c.Object("foo/1"), nil, nil))
 
 		iter := c.Objects()
@@ -244,7 +244,7 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 		return
 	}
 	for idx, info := range actualInfos {
-		//case 1: pseudo-directory
+		// case 1: pseudo-directory
 		if strings.HasPrefix(expectedNames[idx], "subdir:") {
 			expectedSubdir := strings.TrimPrefix(expectedNames[idx], "subdir:")
 			if expectedSubdir != info.SubDirectory {
@@ -262,7 +262,7 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 				idx, info.SubDirectory)
 		}
 
-		//case 2: symlink
+		// case 2: symlink
 		if strings.HasPrefix(expectedNames[idx], "symlink:") {
 			fields := strings.SplitN(strings.TrimPrefix(expectedNames[idx], "symlink:"), ">", 2)
 			expectedName, expectedTargetName := fields[0], fields[1]
@@ -302,7 +302,7 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 			continue
 		}
 
-		//case 3: regular object
+		// case 3: regular object
 		if info.Object == nil {
 			t.Errorf("expected objects[%d].Name() == %q, got object == nil",
 				idx, expectedNames[idx])

@@ -31,13 +31,13 @@ func TestContainerIterator(t *testing.T) {
 			return fmt.Sprintf("schwift-test-listing%d", idx)
 		}
 
-		//create test containers that can be listed
+		// create test containers that can be listed
 		for idx := 1; idx <= 4; idx++ {
 			_, err := a.Container(cname(idx)).EnsureExists()
 			expectSuccess(t, err)
 		}
 
-		//test iteration with empty last page
+		// test iteration with empty last page
 		iter := a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		cs, err := iter.NextPage(2)
@@ -53,7 +53,7 @@ func TestContainerIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
-		//test iteration with partial last page
+		// test iteration with partial last page
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		cs, err = iter.NextPage(3)
@@ -66,7 +66,7 @@ func TestContainerIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
-		//test detailed iteration
+		// test detailed iteration
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		cis, err := iter.NextPageDetailed(2)
@@ -82,7 +82,7 @@ func TestContainerIterator(t *testing.T) {
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis)
 
-		//test Foreach
+		// test Foreach
 		a.Invalidate()
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
@@ -95,7 +95,7 @@ func TestContainerIterator(t *testing.T) {
 		expectInt(t, idx, 4)
 		expectAccountHeadersCached(t, a)
 
-		//test ForeachDetailed
+		// test ForeachDetailed
 		a.Invalidate()
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
@@ -108,21 +108,21 @@ func TestContainerIterator(t *testing.T) {
 		expectInt(t, idx, 4)
 		expectAccountHeadersCached(t, a)
 
-		//test Collect
+		// test Collect
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		cs, err = iter.Collect()
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2), cname(3), cname(4))
 
-		//test CollectDetailed
+		// test CollectDetailed
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		cis, err = iter.CollectDetailed()
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(1), cname(2), cname(3), cname(4))
 
-		//cleanup
+		// cleanup
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
@@ -171,7 +171,7 @@ func expectContainerInfos(t *testing.T, actualInfos []schwift.ContainerInfo, exp
 				idx, expectedNames[idx], info.Container.Name())
 		}
 		//TODO: upload test object of defined size to the listed containers to
-		//check if this zero is not just the default value
+		// check if this zero is not just the default value
 		if info.BytesUsed != 0 {
 			t.Errorf("expected containers[%d] bytesUsed == 0, got %d",
 				idx, info.BytesUsed)

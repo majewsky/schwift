@@ -68,9 +68,9 @@ func TestBulkDeleteError(t *testing.T) {
 			objs = objs[1:]
 			cs := []*schwift.Container{c}
 
-			//not deleting all objects should lead to 409 Conflict when deleting the Container
-			//(NOTE: actual Swift returns 400 here although I don't understand why
-			//even after reading its code)
+			// not deleting all objects should lead to 409 Conflict when deleting the Container
+			// (NOTE: actual Swift returns 400 here although I don't understand why
+			// even after reading its code)
 			numDeleted, numNotFound, err := c.Account().BulkDelete(objs, cs, nil)
 			expectInt(t, numDeleted, len(objs))
 			expectInt(t, numNotFound, 0)

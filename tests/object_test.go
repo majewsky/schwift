@@ -46,8 +46,8 @@ func TestObjectLifecycle(t *testing.T) {
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectBool(t, schwift.Is(err, http.StatusNoContent), false)
 
-		//DELETE should be idempotent and not return success on non-existence, but
-		//OpenStack LOVES to be inconsistent with everything (including, notably, itself)
+		// DELETE should be idempotent and not return success on non-existence, but
+		// OpenStack LOVES to be inconsistent with everything (including, notably, itself)
 		err = o.Delete(nil, nil)
 		expectError(t, err, fmt.Sprintf("could not DELETE %q in Swift: expected 204 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>", o.FullName()))
 
@@ -63,31 +63,31 @@ func TestObjectLifecycle(t *testing.T) {
 
 func TestObjectUpload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		//test upload with bytes.Reader
+		// test upload with bytes.Reader
 		obj := c.Object("upload1")
 		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with bytes.Buffer
+		// test upload with bytes.Buffer
 		obj = c.Object("upload2")
 		err = obj.Upload(bytes.NewBuffer(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with strings.Reader
+		// test upload with strings.Reader
 		obj = c.Object("upload3")
 		err = obj.Upload(strings.NewReader(string(objectExampleContent)), nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with opaque io.Reader
+		// test upload with opaque io.Reader
 		obj = c.Object("upload4")
 		err = obj.Upload(opaqueReader{bytes.NewReader(objectExampleContent)}, nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with io.Writer
+		// test upload with io.Writer
 		obj = c.Object("upload5")
 		err = obj.UploadFromWriter(nil, nil, func(w io.Writer) error {
 			_, err := w.Write(objectExampleContent)
@@ -96,13 +96,13 @@ func TestObjectUpload(t *testing.T) {
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, objectExampleContent)
 
-		//test upload with empty reader (should create zero-byte-sized object)
+		// test upload with empty reader (should create zero-byte-sized object)
 		obj = c.Object("upload6")
 		err = obj.Upload(eofReader{}, nil, nil)
 		expectSuccess(t, err)
 		expectObjectContent(t, obj, nil)
 
-		//test upload without reader (should create zero-byte-sized object)
+		// test upload without reader (should create zero-byte-sized object)
 		obj = c.Object("upload7")
 		err = obj.Upload(nil, nil, nil)
 		expectSuccess(t, err)
@@ -126,22 +126,22 @@ func (r opaqueReader) Read(buf []byte) (int, error) {
 
 func TestObjectDownload(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		//upload example object
+		// upload example object
 		obj := c.Object("example")
 		err := obj.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 
-		//test download as string
+		// test download as string
 		str, err := obj.Download(nil).AsString()
 		expectSuccess(t, err)
 		expectString(t, str, string(objectExampleContent))
 
-		//test download as byte slice
+		// test download as byte slice
 		buf, err := obj.Download(nil).AsByteSlice()
 		expectSuccess(t, err)
 		expectString(t, string(buf), string(objectExampleContent))
 
-		//test download as io.ReadCloser slice
+		// test download as io.ReadCloser slice
 		reader, err := obj.Download(nil).AsReadCloser()
 		expectSuccess(t, err)
 		buf = make([]byte, 4)
@@ -161,14 +161,14 @@ func TestObjectUpdate(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj := c.Object("example")
 
-		//test that metadata update fails for non-existing object
+		// test that metadata update fails for non-existing object
 		newHeaders := schwift.NewObjectHeaders()
 		newHeaders.ContentType().Set("application/json")
 		err := obj.Update(newHeaders, nil)
 		expectBool(t, schwift.Is(err, http.StatusNotFound), true)
 		expectError(t, err, fmt.Sprintf("could not POST %q in Swift: expected 202 response, got 404 instead: <html><h1>Not Found</h1><p>The resource could not be found.</p></html>", obj.FullName()))
 
-		//create object
+		// create object
 		err = obj.Upload(nil, nil, nil)
 		expectSuccess(t, err)
 
@@ -176,7 +176,7 @@ func TestObjectUpdate(t *testing.T) {
 		expectSuccess(t, err)
 		expectString(t, hdr.ContentType().Get(), "application/octet-stream")
 
-		//now the metadata update should work
+		// now the metadata update should work
 		err = obj.Update(newHeaders, nil)
 		expectSuccess(t, err)
 		obj.Invalidate()
@@ -203,40 +203,40 @@ func TestObjectCopy(t *testing.T) {
 
 func TestSymlinkOperations(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
-		//create a test object that we can link to
+		// create a test object that we can link to
 		obj1 := c.Object("target")
 		err := obj1.Upload(bytes.NewReader(objectExampleContent), nil, nil)
 		expectSuccess(t, err)
 		expectObjectExistence(t, obj1, true)
 
-		//create a symlink
+		// create a symlink
 		obj2 := c.Object("symlink")
 		expectSuccess(t, obj2.SymlinkTo(obj1, nil, nil))
 		expectObjectExistence(t, obj2, true)
 		expectObjectSymlink(t, obj2, obj1)
 		expectObjectContent(t, obj2, objectExampleContent)
 
-		//overwrite symlink with normal object
+		// overwrite symlink with normal object
 		otherContent := []byte("abc")
 		expectSuccess(t, obj2.Upload(bytes.NewReader(otherContent), nil, nil))
 		expectObjectExistence(t, obj2, true)
 		expectObjectSymlink(t, obj2, nil)
 		expectObjectContent(t, obj2, otherContent)
 
-		//overwrite normal object with symlink
+		// overwrite normal object with symlink
 		expectSuccess(t, obj2.SymlinkTo(obj1, nil, nil))
 		expectObjectExistence(t, obj2, true)
 		expectObjectSymlink(t, obj2, obj1)
 		expectObjectContent(t, obj2, objectExampleContent)
 
-		//deep-copy symlink
+		// deep-copy symlink
 		obj3 := c.Object("copy")
 		expectSuccess(t, obj2.CopyTo(obj3, nil, nil))
 		expectObjectExistence(t, obj3, true)
 		expectObjectSymlink(t, obj3, nil)
 		expectObjectContent(t, obj3, objectExampleContent)
 
-		//shallow-copy symlink
+		// shallow-copy symlink
 		expectSuccess(t, obj2.CopyTo(obj3, &schwift.CopyOptions{
 			ShallowCopySymlinks: true,
 		}, nil))
@@ -244,7 +244,7 @@ func TestSymlinkOperations(t *testing.T) {
 		expectObjectSymlink(t, obj3, obj1)
 		expectObjectContent(t, obj3, objectExampleContent)
 
-		//delete symlink
+		// delete symlink
 		expectSuccess(t, obj2.Delete(nil, nil))
 		expectObjectExistence(t, obj2, false)
 	})

@@ -30,10 +30,10 @@ func TestAccountBasic(t *testing.T) {
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
-		//There are not a lot of things we can test here (besides testing that
-		//Headers() does not fail, i.e. everything parses correctly), but
-		//Content-Type is going to be either application/json or text/plain because
-		//GET on an account lists the container names as plain text or JSON.
+		// There are not a lot of things we can test here (besides testing that
+		// Headers() does not fail, i.e. everything parses correctly), but
+		// Content-Type is going to be either application/json or text/plain because
+		// GET on an account lists the container names as plain text or JSON.
 		if hdr.Get("Content-Type") != "application/json; charset=utf-8" {
 			expectString(t, hdr.Get("Content-Type"), "text/plain; charset=utf-8")
 		}
@@ -42,7 +42,7 @@ func TestAccountBasic(t *testing.T) {
 
 func TestAccountMetadata(t *testing.T) {
 	testWithAccount(t, func(a *schwift.Account) {
-		//test creating some metadata
+		// test creating some metadata
 		hdr := schwift.NewAccountHeaders()
 		hdr.Metadata().Set("schwift-test1", "first")
 		hdr.Metadata().Set("schwift-test2", "second")
@@ -58,7 +58,7 @@ func TestAccountMetadata(t *testing.T) {
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "first")
 		expectString(t, hdr.Metadata().Get("schwift-test2"), "second")
 
-		//test deleting some metadata
+		// test deleting some metadata
 		hdr = schwift.NewAccountHeaders()
 		hdr.Metadata().Clear("schwift-test1")
 		err = a.Update(hdr, nil)
@@ -73,7 +73,7 @@ func TestAccountMetadata(t *testing.T) {
 		expectString(t, hdr.Metadata().Get("schwift-test1"), "")
 		expectString(t, hdr.Metadata().Get("schwift-test2"), "second")
 
-		//test updating some metadata
+		// test updating some metadata
 		hdr = schwift.NewAccountHeaders()
 		hdr.Metadata().Set("schwift-test1", "will not be set")
 		hdr.Metadata().Del("schwift-test1")

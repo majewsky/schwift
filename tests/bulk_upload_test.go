@@ -38,7 +38,7 @@ func TestBulkUploadSuccess(t *testing.T) {
 			obj2.FullName(): []byte("world"),
 		})
 		n, err := c.Account().BulkUpload(
-			"", //upload path
+			"", // upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),
 			nil,
@@ -56,7 +56,7 @@ func TestBulkUploadSuccess(t *testing.T) {
 func TestBulkUploadArchiveError(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		n, err := c.Account().BulkUpload(
-			c.Name(), //upload path
+			c.Name(), // upload path
 			schwift.BulkUploadTar,
 			strings.NewReader("This is not the TAR archive you're looking for."),
 			nil,
@@ -81,7 +81,7 @@ func TestBulkUploadObjectError(t *testing.T) {
 			obj2.Name(): []byte("world"),
 		})
 		n, err := c.Account().BulkUpload(
-			c.Name(), //upload path
+			c.Name(), // upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),
 			nil,
@@ -92,10 +92,10 @@ func TestBulkUploadObjectError(t *testing.T) {
 		expectInt(t, len(bulkErr.ObjectErrors), 1)
 		expectString(t, bulkErr.ObjectErrors[0].ContainerName, c.Name())
 		expectInt(t, bulkErr.ObjectErrors[0].StatusCode, 400)
-		//^ We cannot match the ObjectName (or use expectError, for that matter)
-		//here because Swift truncates the object name to its max length.
+		// ^ We cannot match the ObjectName (or use expectError, for that matter)
+		// here because Swift truncates the object name to its max length.
 
-		//even if some files cannot be processed, the other files shall be stored correctly
+		// even if some files cannot be processed, the other files shall be stored correctly
 		expectObjectExistence(t, obj2, true)
 		expectObjectContent(t, obj2, []byte("world"))
 	})
@@ -127,7 +127,7 @@ func buildTarArchive(files map[string][]byte) []byte {
 }
 
 func buildInvalidObjectName() string {
-	//5000 is more than the usual max_object_name_length of 1024
+	// 5000 is more than the usual max_object_name_length of 1024
 	buf := make([]byte, 5000)
 	for idx := range buf {
 		buf[idx] = 'a'
