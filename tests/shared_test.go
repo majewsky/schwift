@@ -19,6 +19,7 @@
 package tests
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec // Etag uses md5
 	"crypto/rand"
 	"encoding/hex"
@@ -26,10 +27,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/gophercloud/gophercloud/openstack/objectstorage/v1/swauth"
-	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/gophercloud/gophercloud/v2/openstack"
+	"github.com/gophercloud/gophercloud/v2/openstack/objectstorage/v1/swauth"
+	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 
 	"github.com/majewsky/schwift"
 	"github.com/majewsky/schwift/gopherschwift"
@@ -43,7 +44,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 
 	if stAuth == "" && stUser == "" && stKey == "" {
 		//option 1: Keystone authentication
-		provider, err := clientconfig.AuthenticatedClient(nil)
+		provider, err := clientconfig.AuthenticatedClient(context.TODO(), nil)
 		if err != nil {
 			t.Errorf("clientconfig.AuthenticatedClient returned: " + err.Error())
 			t.Error("probably missing Swift credentials (need either ST_AUTH, ST_USER, ST_KEY or OS_* variables)")
@@ -61,7 +62,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 			t.Errorf("openstack.NewClient returned: " + err.Error())
 			return
 		}
-		client, err = swauth.NewObjectStorageV1(provider, swauth.AuthOpts{User: stUser, Key: stKey})
+		client, err = swauth.NewObjectStorageV1(context.TODO(), provider, swauth.AuthOpts{User: stUser, Key: stKey})
 		if err != nil {
 			t.Errorf("swauth.NewObjectStorageV1 returned: " + err.Error())
 			return
