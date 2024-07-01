@@ -296,7 +296,7 @@ func TestSLOWithRangeSegments(t *testing.T) {
 		expectSuccess(t, lo.WriteManifest(nil))
 
 		expectObjectContent(t, o, []byte(
-			strings.Replace(segmentStr, "X", "", -1),
+			strings.ReplaceAll(segmentStr, "X", ""),
 		))
 		expectLargeObject(t, o, []schwift.SegmentInfo{
 			{
