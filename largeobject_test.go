@@ -31,17 +31,17 @@ func TestParseHTTPRange(t *testing.T) {
 		offset int64
 		length uint64
 	}{
-		//all the testcases from RFC 7233, section 3.1
+		// all the testcases from RFC 7233, section 3.1
 		{"0-499", true, 0, 500},
 		{"500-999", true, 500, 500},
 		{"-500", true, -1, 500},
 		{"9500-", true, 9500, 0},
 		{"0-0", true, 0, 1},
 		{"-1", true, -1, 1},
-		//and then some more
+		// and then some more
 		{"0-", true, 0, 0},
 		{"-", true, 0, 0},
-		//some error cases for 100% coverage
+		// some error cases for 100% coverage
 		{"no dash", false, 0, 0},
 		{"what-the-heck", false, 0, 0},
 		{"-X", false, 0, 0},

@@ -59,8 +59,8 @@ func must(t *testing.T, err error) {
 }
 
 func TestObjectTempURLSha1Only(t *testing.T) {
-	//setup a bogus backend, account, container and object with exact names to
-	//reproducibly generate a temp URL
+	// setup a bogus backend, account, container and object with exact names to
+	// reproducibly generate a temp URL
 	account, err := InitializeAccount(tempurlBogusBackend{
 		mockInfoText: `{ "tempurl": { "allowed_digests": [ "sha1" ]}}`,
 	})
@@ -74,8 +74,8 @@ func TestObjectTempURLSha1Only(t *testing.T) {
 }
 
 func TestObjectTempURL(t *testing.T) {
-	//setup a bogus backend, account, container and object with exact names to
-	//reproducibly generate a temp URL
+	// setup a bogus backend, account, container and object with exact names to
+	// reproducibly generate a temp URL
 	account, err := InitializeAccount(tempurlBogusBackend{
 		mockInfoText: `{ "tempurl": { "allowed_digests": [ "sha1", "sha256", "sha512"]}}`,
 	})
