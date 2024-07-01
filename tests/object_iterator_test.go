@@ -20,6 +20,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -40,52 +41,52 @@ func TestObjectIterator(t *testing.T) {
 		for idx := 1; idx <= 4; idx++ {
 			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
-			err := c.Object(oname(idx)).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
+			err := c.Object(oname(idx)).Upload(context.TODO(), bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
 			expectSuccess(t, err)
 		}
 
 		// test iteration with empty last page
 		iter := c.Objects()
 		iter.Prefix = "schwift-test-listing"
-		os, err := iter.NextPage(2)
+		os, err := iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(1), oname(2))
-		os, err = iter.NextPage(2)
+		os, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(3), oname(4))
-		os, err = iter.NextPage(2)
+		os, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectObjectNames(t, os)
-		os, err = iter.NextPage(2)
+		os, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectObjectNames(t, os)
 
 		// test iteration with partial last page
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
-		os, err = iter.NextPage(3)
+		os, err = iter.NextPage(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(1), oname(2), oname(3))
-		os, err = iter.NextPage(3)
+		os, err = iter.NextPage(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(4))
-		os, err = iter.NextPage(4)
+		os, err = iter.NextPage(context.TODO(), 4)
 		expectSuccess(t, err)
 		expectObjectNames(t, os)
 
 		// test detailed iteration
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
-		ois, err := iter.NextPageDetailed(2)
+		ois, err := iter.NextPageDetailed(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, oname(1), oname(2))
-		ois, err = iter.NextPageDetailed(3)
+		ois, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, oname(3), oname(4))
-		ois, err = iter.NextPageDetailed(3)
+		ois, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois)
-		ois, err = iter.NextPageDetailed(3)
+		ois, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois)
 
@@ -94,7 +95,7 @@ func TestObjectIterator(t *testing.T) {
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
-		expectSuccess(t, iter.Foreach(func(o *schwift.Object) error {
+		expectSuccess(t, iter.Foreach(context.TODO(), func(o *schwift.Object) error {
 			idx++
 			expectString(t, o.Name(), oname(idx))
 			return nil
@@ -107,7 +108,7 @@ func TestObjectIterator(t *testing.T) {
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
-		expectSuccess(t, iter.ForeachDetailed(func(info schwift.ObjectInfo) error {
+		expectSuccess(t, iter.ForeachDetailed(context.TODO(), func(info schwift.ObjectInfo) error {
 			idx++
 			expectString(t, info.Object.Name(), oname(idx))
 			return nil
@@ -118,14 +119,14 @@ func TestObjectIterator(t *testing.T) {
 		// test Collect
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
-		os, err = iter.Collect()
+		os, err = iter.Collect(context.TODO())
 		expectSuccess(t, err)
 		expectObjectNames(t, os, oname(1), oname(2), oname(3), oname(4))
 
 		// test CollectDetailed
 		iter = c.Objects()
 		iter.Prefix = "schwift-test-listing"
-		ois, err = iter.CollectDetailed()
+		ois, err = iter.CollectDetailed(context.TODO())
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, oname(1), oname(2), oname(3), oname(4))
 	})
@@ -146,20 +147,20 @@ func TestPseudoDirectories(t *testing.T) {
 		for _, name := range objectNames {
 			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
-			err := c.Object(name).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
+			err := c.Object(name).Upload(context.TODO(), bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
 			expectSuccess(t, err)
 		}
 
 		// test iteration with Delimiter and no Prefix
 		iter := c.Objects()
 		iter.Delimiter = "/"
-		os, err := iter.Collect()
+		os, err := iter.Collect(context.TODO())
 		expectSuccess(t, err)
 		expectObjectNames(t, os, "foo/")
 
 		iter = c.Objects()
 		iter.Delimiter = "/"
-		ois, err := iter.CollectDetailed()
+		ois, err := iter.CollectDetailed(context.TODO())
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, "subdir:foo/")
 
@@ -167,14 +168,14 @@ func TestPseudoDirectories(t *testing.T) {
 		iter = c.Objects()
 		iter.Prefix = "foo/"
 		iter.Delimiter = "/"
-		os, err = iter.Collect()
+		os, err = iter.Collect(context.TODO())
 		expectSuccess(t, err)
 		expectObjectNames(t, os, "foo/1", "foo/2", "foo/3", "foo/bar", "foo/bar/")
 
 		iter = c.Objects()
 		iter.Prefix = "foo/"
 		iter.Delimiter = "/"
-		ois, err = iter.CollectDetailed()
+		ois, err = iter.CollectDetailed(context.TODO())
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, "foo/1", "foo/2", "foo/3", "foo/bar", "subdir:foo/bar/")
 	})
@@ -190,20 +191,20 @@ func TestObjectIteratorWithSymlinks(t *testing.T) {
 		for _, name := range objectNames {
 			hdr := schwift.NewObjectHeaders()
 			hdr.ContentType().Set("application/json")
-			err := c.Object(name).Upload(bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
+			err := c.Object(name).Upload(context.TODO(), bytes.NewReader(objectExampleContent), nil, hdr.ToOpts())
 			expectSuccess(t, err)
 		}
 
 		// create a test symlink
-		expectSuccess(t, c.Object("foo/2").SymlinkTo(c.Object("foo/1"), nil, nil))
+		expectSuccess(t, c.Object("foo/2").SymlinkTo(context.TODO(), c.Object("foo/1"), nil, nil))
 
 		iter := c.Objects()
-		os, err := iter.Collect()
+		os, err := iter.Collect(context.TODO())
 		expectSuccess(t, err)
 		expectObjectNames(t, os, "foo/1", "foo/2", "foo/3")
 
 		iter = c.Objects()
-		ois, err := iter.CollectDetailed()
+		ois, err := iter.CollectDetailed(context.TODO())
 		expectSuccess(t, err)
 		expectObjectInfos(t, ois, "foo/1", "symlink:foo/2>foo/1", "foo/3")
 	})
@@ -211,7 +212,7 @@ func TestObjectIteratorWithSymlinks(t *testing.T) {
 
 func expectContainerHeadersCached(t *testing.T, c *schwift.Container) {
 	requestCountBefore := c.Account().Backend().(*RequestCountingBackend).Count
-	_, err := c.Headers()
+	_, err := c.Headers(context.TODO())
 	expectSuccess(t, err)
 	requestCountAfter := c.Account().Backend().(*RequestCountingBackend).Count
 

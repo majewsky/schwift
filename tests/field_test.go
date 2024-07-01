@@ -19,6 +19,7 @@
 package tests
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"testing"
@@ -62,7 +63,7 @@ func TestFieldString(t *testing.T) {
 
 func TestFieldTimestamp(t *testing.T) {
 	testWithAccount(t, func(a *schwift.Account) {
-		hdr, err := a.Headers()
+		hdr, err := a.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			return
 		}
@@ -88,12 +89,12 @@ func TestFieldTimestamp(t *testing.T) {
 func TestFieldHTTPTimestamp(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		obj := c.Object("test")
-		err := obj.Upload(nil, nil, nil)
+		err := obj.Upload(context.TODO(), nil, nil, nil)
 		if !expectSuccess(t, err) {
 			return
 		}
 
-		hdr, err := obj.Headers()
+		hdr, err := obj.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			return
 		}

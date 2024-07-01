@@ -21,6 +21,7 @@ package tests
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -38,6 +39,7 @@ func TestBulkUploadSuccess(t *testing.T) {
 			obj2.FullName(): []byte("world"),
 		})
 		n, err := c.Account().BulkUpload(
+			context.TODO(),
 			"", // upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),
@@ -56,6 +58,7 @@ func TestBulkUploadSuccess(t *testing.T) {
 func TestBulkUploadArchiveError(t *testing.T) {
 	testWithContainer(t, func(c *schwift.Container) {
 		n, err := c.Account().BulkUpload(
+			context.TODO(),
 			c.Name(), // upload path
 			schwift.BulkUploadTar,
 			strings.NewReader("This is not the TAR archive you're looking for."),
@@ -81,6 +84,7 @@ func TestBulkUploadObjectError(t *testing.T) {
 			obj2.Name(): []byte("world"),
 		})
 		n, err := c.Account().BulkUpload(
+			context.TODO(),
 			c.Name(), // upload path
 			schwift.BulkUploadTar,
 			bytes.NewReader(archive),

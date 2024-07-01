@@ -19,6 +19,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -33,52 +34,52 @@ func TestContainerIterator(t *testing.T) {
 
 		// create test containers that can be listed
 		for idx := 1; idx <= 4; idx++ {
-			_, err := a.Container(cname(idx)).EnsureExists()
+			_, err := a.Container(cname(idx)).EnsureExists(context.TODO())
 			expectSuccess(t, err)
 		}
 
 		// test iteration with empty last page
 		iter := a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err := iter.NextPage(2)
+		cs, err := iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2))
-		cs, err = iter.NextPage(2)
+		cs, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(3), cname(4))
-		cs, err = iter.NextPage(2)
+		cs, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
-		cs, err = iter.NextPage(2)
+		cs, err = iter.NextPage(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
 		// test iteration with partial last page
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err = iter.NextPage(3)
+		cs, err = iter.NextPage(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2), cname(3))
-		cs, err = iter.NextPage(3)
+		cs, err = iter.NextPage(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(4))
-		cs, err = iter.NextPage(4)
+		cs, err = iter.NextPage(context.TODO(), 4)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
 		// test detailed iteration
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cis, err := iter.NextPageDetailed(2)
+		cis, err := iter.NextPageDetailed(context.TODO(), 2)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(1), cname(2))
-		cis, err = iter.NextPageDetailed(3)
+		cis, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(3), cname(4))
-		cis, err = iter.NextPageDetailed(3)
+		cis, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis)
-		cis, err = iter.NextPageDetailed(3)
+		cis, err = iter.NextPageDetailed(context.TODO(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis)
 
@@ -87,7 +88,7 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
-		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
+		expectSuccess(t, iter.Foreach(context.TODO(), func(c *schwift.Container) error {
 			idx++
 			expectString(t, c.Name(), cname(idx))
 			return nil
@@ -100,7 +101,7 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
-		expectSuccess(t, iter.ForeachDetailed(func(info schwift.ContainerInfo) error {
+		expectSuccess(t, iter.ForeachDetailed(context.TODO(), func(info schwift.ContainerInfo) error {
 			idx++
 			expectString(t, info.Container.Name(), cname(idx))
 			return nil
@@ -111,29 +112,29 @@ func TestContainerIterator(t *testing.T) {
 		// test Collect
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err = iter.Collect()
+		cs, err = iter.Collect(context.TODO())
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2), cname(3), cname(4))
 
 		// test CollectDetailed
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cis, err = iter.CollectDetailed()
+		cis, err = iter.CollectDetailed(context.TODO())
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(1), cname(2), cname(3), cname(4))
 
 		// cleanup
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		expectSuccess(t, iter.Foreach(func(c *schwift.Container) error {
-			return c.Delete(nil)
+		expectSuccess(t, iter.Foreach(context.TODO(), func(c *schwift.Container) error {
+			return c.Delete(context.TODO(), nil)
 		}))
 	})
 }
 
 func expectAccountHeadersCached(t *testing.T, a *schwift.Account) {
 	requestCountBefore := a.Backend().(*RequestCountingBackend).Count
-	_, err := a.Headers()
+	_, err := a.Headers(context.TODO())
 	expectSuccess(t, err)
 	requestCountAfter := a.Backend().(*RequestCountingBackend).Count
 
