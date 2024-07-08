@@ -1,4 +1,4 @@
-# v2.0.0 (TBD)
+# v2.0.0 (2024-07-08)
 
 Breaking changes:
 
