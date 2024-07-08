@@ -87,19 +87,19 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
 	testWithAccount(t, func(a *schwift.Account) {
 		containerName := getRandomName()
-		container, err := a.Container(containerName).EnsureExists()
+		container, err := a.Container(containerName).EnsureExists(context.TODO())
 		expectSuccess(t, err)
 
 		testCode(container)
 
 		// cleanup
-		exists, err := container.Exists()
+		exists, err := container.Exists(context.TODO())
 		expectSuccess(t, err)
 		if exists {
-			expectSuccess(t, container.Objects().Foreach(func(o *schwift.Object) error {
-				return o.Delete(nil, nil)
+			expectSuccess(t, container.Objects().Foreach(context.TODO(), func(o *schwift.Object) error {
+				return o.Delete(context.TODO(), nil, nil)
 			}))
-			err = container.Delete(nil)
+			err = container.Delete(context.TODO(), nil)
 			expectSuccess(t, err)
 		}
 	})

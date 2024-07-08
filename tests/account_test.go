@@ -19,6 +19,7 @@
 package tests
 
 import (
+	"context"
 	"testing"
 
 	"github.com/majewsky/schwift"
@@ -26,7 +27,7 @@ import (
 
 func TestAccountBasic(t *testing.T) {
 	testWithAccount(t, func(a *schwift.Account) {
-		hdr, err := a.Headers()
+		hdr, err := a.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
@@ -46,12 +47,12 @@ func TestAccountMetadata(t *testing.T) {
 		hdr := schwift.NewAccountHeaders()
 		hdr.Metadata().Set("schwift-test1", "first")
 		hdr.Metadata().Set("schwift-test2", "second")
-		err := a.Update(hdr, nil)
+		err := a.Update(context.TODO(), hdr, nil)
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
-		hdr, err = a.Headers()
+		hdr, err = a.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
@@ -61,12 +62,12 @@ func TestAccountMetadata(t *testing.T) {
 		// test deleting some metadata
 		hdr = schwift.NewAccountHeaders()
 		hdr.Metadata().Clear("schwift-test1")
-		err = a.Update(hdr, nil)
+		err = a.Update(context.TODO(), hdr, nil)
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
-		hdr, err = a.Headers()
+		hdr, err = a.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
@@ -78,12 +79,12 @@ func TestAccountMetadata(t *testing.T) {
 		hdr.Metadata().Set("schwift-test1", "will not be set")
 		hdr.Metadata().Del("schwift-test1")
 		hdr.Metadata().Set("schwift-test2", "changed")
-		err = a.Update(hdr, nil)
+		err = a.Update(context.TODO(), hdr, nil)
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
 
-		hdr, err = a.Headers()
+		hdr, err = a.Headers(context.TODO())
 		if !expectSuccess(t, err) {
 			t.FailNow()
 		}
