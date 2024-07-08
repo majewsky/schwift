@@ -21,7 +21,7 @@ package tests
 import (
 	"net/http"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 type RequestCountingBackend struct {

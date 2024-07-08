@@ -25,7 +25,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 var objectExampleContent = []byte(`{"message":"Hello World!"}`)

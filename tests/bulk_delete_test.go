@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/majewsky/schwift"
-	"github.com/majewsky/schwift/capabilities"
+	"github.com/majewsky/schwift/v2"
+	"github.com/majewsky/schwift/v2/capabilities"
 )
 
 func TestBulkDeleteSuccess(t *testing.T) {

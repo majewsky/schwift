@@ -27,7 +27,7 @@ so you only need to obtain a client token once using Gophercloud. For example:
 	import (
 		"github.com/gophercloud/gophercloud/v2/openstack"
 		"github.com/gophercloud/utils/v2/openstack/clientconfig"
-		"github.com/majewsky/schwift/gopherschwift"
+		"github.com/majewsky/schwift/v2/gopherschwift"
 	)
 
 	provider, err := clientconfig.AuthenticatedClient(nil)
@@ -45,7 +45,7 @@ import (
 
 	"github.com/gophercloud/gophercloud/v2"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 // Options contains additional options that can be passed to Wrap().

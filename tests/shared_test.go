@@ -32,8 +32,8 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack/objectstorage/v1/swauth"
 	"github.com/gophercloud/utils/v2/openstack/clientconfig"
 
-	"github.com/majewsky/schwift"
-	"github.com/majewsky/schwift/gopherschwift"
+	"github.com/majewsky/schwift/v2"
+	"github.com/majewsky/schwift/v2/gopherschwift"
 )
 
 func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {

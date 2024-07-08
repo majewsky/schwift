@@ -21,7 +21,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 func TestParseAccountHeadersSuccess(t *testing.T) {

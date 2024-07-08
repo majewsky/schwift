@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 func foreachLargeObjectStrategy(action func(schwift.LargeObjectStrategy, string)) {

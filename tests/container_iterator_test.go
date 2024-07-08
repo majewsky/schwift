@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 func TestContainerIterator(t *testing.T) {

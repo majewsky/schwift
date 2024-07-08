@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/majewsky/schwift"
+	"github.com/majewsky/schwift/v2"
 )
 
 func TestContainerLifecycle(t *testing.T) {

@@ -53,7 +53,7 @@ Then, in all these cases, you use gopherschwift to convert the
 gophercloud.ServiceClient into a schwift.Account instance, from which point you
 have access to all of schwift's API:
 
-	import "github.com/majewsky/schwift/gopherschwift"
+	import "github.com/majewsky/schwift/v2/gopherschwift"
 
 	account, err := gopherschwift.Wrap(client)
 

@@ -25,8 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/majewsky/schwift"
-	"github.com/majewsky/schwift/internal/errext"
+	"github.com/majewsky/schwift/v2"
+	"github.com/majewsky/schwift/v2/internal/errext"
 )
 
 func TestBulkUploadSuccess(t *testing.T) {
