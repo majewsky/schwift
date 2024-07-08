@@ -67,7 +67,7 @@ const (
 // This operation returns (0, ErrNotSupported) if the server does not support
 // bulk-uploading.
 func (a *Account) BulkUpload(ctx context.Context, uploadPath string, format BulkUploadFormat, contents io.Reader, opts *RequestOptions) (int, error) {
-	caps, err := a.Capabilities()
+	caps, err := a.Capabilities(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -158,7 +158,7 @@ func (a *Account) BulkDelete(ctx context.Context, objects []*Object, containers 
 	}
 
 	// check capabilities to choose deletion method
-	caps, err := a.Capabilities()
+	caps, err := a.Capabilities(ctx)
 	if err != nil {
 		return 0, 0, err
 	}

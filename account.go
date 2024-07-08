@@ -189,7 +189,7 @@ func (a *Account) Containers() *ContainerIterator {
 // Capabilities queries the GET /info endpoint of the Swift server providing
 // this account. Capabilities are cached, so the GET request will only be sent
 // once during the first call to this method.
-func (a *Account) Capabilities() (Capabilities, error) {
+func (a *Account) Capabilities(ctx context.Context) (Capabilities, error) {
 	a.capsMutex.Lock()
 	defer a.capsMutex.Unlock()
 
@@ -197,7 +197,7 @@ func (a *Account) Capabilities() (Capabilities, error) {
 		return *a.caps, nil
 	}
 
-	buf, err := a.RawCapabilities()
+	buf, err := a.RawCapabilities(ctx)
 	if err != nil {
 		return Capabilities{}, err
 	}
@@ -215,10 +215,10 @@ func (a *Account) Capabilities() (Capabilities, error) {
 // RawCapabilities queries the GET /info endpoint of the Swift server providing
 // this account, and returns the response body. Unlike Account.Capabilities,
 // this method does not employ any caching.
-func (a *Account) RawCapabilities() ([]byte, error) {
+func (a *Account) RawCapabilities(ctx context.Context) ([]byte, error) {
 	// This method is the only one in Schwift that bypasses struct Request since
 	// the request URL is not below the endpoint URL.
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, a.baseURL+"info", http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.baseURL+"info", http.NoBody)
 	if err != nil {
 		return nil, err
 	}

@@ -647,13 +647,13 @@ func contains(s []string, e string) bool {
 //	hdr := NewContainerHeaders()
 //	hdr.TempURLKey().Set(key)
 //	c := o.Container()
-//	err := c.Update(hdr, nil)
+//	err := c.Update(ctx, hdr, nil)
 //
 //	//...we can use it to generate temporary URLs.
-//	url := o.TempURL(key, "GET", time.Now().Add(10 * time.Minute))
+//	url := o.TempURL(ctx, key, "GET", time.Now().Add(10 * time.Minute))
 //	resp, err := http.Get(url)
 //	//This time, resp.StatusCode == 200 because the URL includes a token.
-func (o *Object) TempURL(key, method string, expires time.Time) (string, error) {
+func (o *Object) TempURL(ctx context.Context, key, method string, expires time.Time) (string, error) {
 	urlStr, err := o.URL()
 	if err != nil {
 		return "", err
@@ -663,7 +663,7 @@ func (o *Object) TempURL(key, method string, expires time.Time) (string, error) 
 		return "", err
 	}
 
-	capabilities, err := o.c.a.Capabilities()
+	capabilities, err := o.c.a.Capabilities(ctx)
 	if err != nil {
 		return "", err
 	}

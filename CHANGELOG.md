@@ -1,3 +1,11 @@
+# v2.0.0 (TBD)
+
+Breaking changes:
+
+- All methods that make HTTP requests now take a leading `context.Context` argument.
+  The `RequestOptions.Context` field has been removed because it is made redundant
+  by these extra arguments.
+
 # v1.3.0 (2023-10-25)
 
 New features:

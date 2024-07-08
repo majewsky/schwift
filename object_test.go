@@ -19,6 +19,7 @@
 package schwift
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -66,7 +67,7 @@ func TestObjectTempURLSha1Only(t *testing.T) {
 	})
 	must(t, err)
 
-	actualURL, err := account.Container("foo").Object("bar").TempURL("supersecretkey", "GET", time.Unix(1e9, 0))
+	actualURL, err := account.Container("foo").Object("bar").TempURL(context.TODO(), "supersecretkey", "GET", time.Unix(1e9, 0))
 	must(t, err)
 
 	expectedURL := "https://example.com/v1/AUTH_example/foo/bar?temp_url_sig=ed44d92005345aee463c884d76d4850ef6d2778d&temp_url_expires=1000000000"
@@ -81,7 +82,7 @@ func TestObjectTempURL(t *testing.T) {
 	})
 	must(t, err)
 
-	actualURL, err := account.Container("foo").Object("bar").TempURL("supersecretkey", "GET", time.Unix(1e9, 0))
+	actualURL, err := account.Container("foo").Object("bar").TempURL(context.TODO(), "supersecretkey", "GET", time.Unix(1e9, 0))
 	must(t, err)
 
 	expectedURL := "https://example.com/v1/AUTH_example/foo/bar?temp_url_sig=5fc94a988b502d83e88863774812636ef0133b8aae04b20366fd906bff41189f&temp_url_expires=1000000000"

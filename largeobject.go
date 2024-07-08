@@ -667,7 +667,7 @@ func (lo *LargeObject) Append(ctx context.Context, contents io.Reader, segmentSi
 	}
 	if segmentSizeBytes == 0 {
 		// apply default value for segmenting size
-		caps, err := lo.object.c.a.Capabilities()
+		caps, err := lo.object.c.a.Capabilities(ctx)
 		if err != nil {
 			return err
 		}
