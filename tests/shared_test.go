@@ -46,25 +46,25 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 		// option 1: Keystone authentication
 		provider, err := clientconfig.AuthenticatedClient(context.TODO(), nil)
 		if err != nil {
-			t.Errorf("clientconfig.AuthenticatedClient returned: " + err.Error())
+			t.Error("clientconfig.AuthenticatedClient returned: " + err.Error())
 			t.Error("probably missing Swift credentials (need either ST_AUTH, ST_USER, ST_KEY or OS_* variables)")
 			return
 		}
 		client, err = openstack.NewObjectStorageV1(provider, gophercloud.EndpointOpts{})
 		if err != nil {
-			t.Errorf("openstack.NewObjectStorageV1 returned: " + err.Error())
+			t.Error("openstack.NewObjectStorageV1 returned: " + err.Error())
 			return
 		}
 	} else {
 		// option 2: Swift authentication v1
 		provider, err := openstack.NewClient(stAuth)
 		if err != nil {
-			t.Errorf("openstack.NewClient returned: " + err.Error())
+			t.Error("openstack.NewClient returned: " + err.Error())
 			return
 		}
 		client, err = swauth.NewObjectStorageV1(context.TODO(), provider, swauth.AuthOpts{User: stUser, Key: stKey})
 		if err != nil {
-			t.Errorf("swauth.NewObjectStorageV1 returned: " + err.Error())
+			t.Error("swauth.NewObjectStorageV1 returned: " + err.Error())
 			return
 		}
 	}

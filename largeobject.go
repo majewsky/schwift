@@ -712,6 +712,7 @@ type segmentingReader struct {
 	SegmentSizeBytes int64 // must be >0 // TODO: in Schwift 3, change field type to uint64 and clamp values to math.MaxInt64 internally
 }
 
+// NextSegment returns an io.Reader covering just the next segment.
 func (sr *segmentingReader) NextSegment() io.Reader {
 	// peek if there is more content in the backing reader
 	buf := make([]byte, 1)

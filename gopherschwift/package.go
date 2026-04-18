@@ -74,10 +74,12 @@ type backend struct {
 	userAgent string
 }
 
+// EndpointURL implements the [schwift.Backend] interface.
 func (g *backend) EndpointURL() string {
 	return g.c.Endpoint
 }
 
+// Clone implements the [schwift.Backend] interface.
 func (g *backend) Clone(newEndpointURL string) schwift.Backend {
 	clonedClient := *g.c
 	clonedClient.Endpoint = newEndpointURL
@@ -87,6 +89,7 @@ func (g *backend) Clone(newEndpointURL string) schwift.Backend {
 	}
 }
 
+// Do implements the [schwift.Backend] interface.
 func (g *backend) Do(req *http.Request) (*http.Response, error) {
 	return g.do(req, false)
 }
