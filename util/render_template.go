@@ -39,7 +39,7 @@ func main() {
 	}
 	dataStr, templateStr := sections[0], sections[1]
 
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	failIfError(json.Unmarshal([]byte(dataStr), &data))
 
 	tmpl, err := template.New("tmpl").Parse(templateStr)
@@ -54,7 +54,7 @@ func failIfError(err error) {
 	}
 }
 
-func fail(msg string, args ...interface{}) {
+func fail(msg string, args ...any) {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}

@@ -246,8 +246,7 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 	}
 	for idx, info := range actualInfos {
 		// case 1: pseudo-directory
-		if strings.HasPrefix(expectedNames[idx], "subdir:") {
-			expectedSubdir := strings.TrimPrefix(expectedNames[idx], "subdir:")
+		if expectedSubdir, ok := strings.CutPrefix(expectedNames[idx], "subdir:"); ok {
 			if expectedSubdir != info.SubDirectory {
 				t.Errorf("expected objects[%d] subdir = %q, got %q",
 					idx, expectedSubdir, info.SubDirectory)
@@ -264,8 +263,8 @@ func expectObjectInfos(t *testing.T, actualInfos []schwift.ObjectInfo, expectedN
 		}
 
 		// case 2: symlink
-		if strings.HasPrefix(expectedNames[idx], "symlink:") {
-			fields := strings.SplitN(strings.TrimPrefix(expectedNames[idx], "symlink:"), ">", 2)
+		if after, ok := strings.CutPrefix(expectedNames[idx], "symlink:"); ok {
+			fields := strings.SplitN(after, ">", 2)
 			expectedName, expectedTargetName := fields[0], fields[1]
 
 			if info.Object == nil {
