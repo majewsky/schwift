@@ -22,7 +22,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/majewsky/schwift/v2"
+	"go.xyrillian.de/schwift/v2"
 )
 
 func TestAccountBasic(t *testing.T) {

@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/majewsky/schwift/v2"
+	"go.xyrillian.de/schwift/v2"
 )
 
 func TestFieldString(t *testing.T) {

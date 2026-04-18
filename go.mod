@@ -1,4 +1,4 @@
-module github.com/majewsky/schwift/v2
+module go.xyrillian.de/schwift/v2
 
 go 1.22
 

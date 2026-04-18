@@ -25,8 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/majewsky/schwift/v2"
-	"github.com/majewsky/schwift/v2/internal/errext"
+	"go.xyrillian.de/schwift/v2"
+	"go.xyrillian.de/schwift/v2/internal/errext"
 )
 
 func TestBulkUploadSuccess(t *testing.T) {
