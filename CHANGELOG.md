@@ -1,3 +1,10 @@
+# v2.2.0 (TBD)
+
+Changes:
+
+- Add `Account.ModifyReportedCapabilities()` to allow working around incorrect
+  capability reporting in Swift emulation of Ceph.
+
 # v2.1.0 (2026-04-19)
 
 Changes:
