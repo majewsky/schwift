@@ -4,6 +4,7 @@ Changes:
 
 - Add `Account.ModifyReportedCapabilities()` to allow working around incorrect
   capability reporting in Swift emulation of Ceph.
+- Bumped all dependencies to their latest versions.
 
 # v2.1.0 (2026-04-19)
 
