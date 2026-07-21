@@ -19,7 +19,6 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -34,52 +33,52 @@ func TestContainerIterator(t *testing.T) {
 
 		// create test containers that can be listed
 		for idx := 1; idx <= 4; idx++ {
-			_, err := a.Container(cname(idx)).EnsureExists(context.TODO())
+			_, err := a.Container(cname(idx)).EnsureExists(t.Context())
 			expectSuccess(t, err)
 		}
 
 		// test iteration with empty last page
 		iter := a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err := iter.NextPage(context.TODO(), 2)
+		cs, err := iter.NextPage(t.Context(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2))
-		cs, err = iter.NextPage(context.TODO(), 2)
+		cs, err = iter.NextPage(t.Context(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(3), cname(4))
-		cs, err = iter.NextPage(context.TODO(), 2)
+		cs, err = iter.NextPage(t.Context(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
-		cs, err = iter.NextPage(context.TODO(), 2)
+		cs, err = iter.NextPage(t.Context(), 2)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
 		// test iteration with partial last page
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err = iter.NextPage(context.TODO(), 3)
+		cs, err = iter.NextPage(t.Context(), 3)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2), cname(3))
-		cs, err = iter.NextPage(context.TODO(), 3)
+		cs, err = iter.NextPage(t.Context(), 3)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(4))
-		cs, err = iter.NextPage(context.TODO(), 4)
+		cs, err = iter.NextPage(t.Context(), 4)
 		expectSuccess(t, err)
 		expectContainerNames(t, cs)
 
 		// test detailed iteration
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cis, err := iter.NextPageDetailed(context.TODO(), 2)
+		cis, err := iter.NextPageDetailed(t.Context(), 2)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(1), cname(2))
-		cis, err = iter.NextPageDetailed(context.TODO(), 3)
+		cis, err = iter.NextPageDetailed(t.Context(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(3), cname(4))
-		cis, err = iter.NextPageDetailed(context.TODO(), 3)
+		cis, err = iter.NextPageDetailed(t.Context(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis)
-		cis, err = iter.NextPageDetailed(context.TODO(), 3)
+		cis, err = iter.NextPageDetailed(t.Context(), 3)
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis)
 
@@ -88,7 +87,7 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx := 0
-		expectSuccess(t, iter.Foreach(context.TODO(), func(c *schwift.Container) error {
+		expectSuccess(t, iter.Foreach(t.Context(), func(c *schwift.Container) error {
 			idx++
 			expectString(t, c.Name(), cname(idx))
 			return nil
@@ -101,7 +100,7 @@ func TestContainerIterator(t *testing.T) {
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
 		idx = 0
-		expectSuccess(t, iter.ForeachDetailed(context.TODO(), func(info schwift.ContainerInfo) error {
+		expectSuccess(t, iter.ForeachDetailed(t.Context(), func(info schwift.ContainerInfo) error {
 			idx++
 			expectString(t, info.Container.Name(), cname(idx))
 			return nil
@@ -112,29 +111,29 @@ func TestContainerIterator(t *testing.T) {
 		// test Collect
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cs, err = iter.Collect(context.TODO())
+		cs, err = iter.Collect(t.Context())
 		expectSuccess(t, err)
 		expectContainerNames(t, cs, cname(1), cname(2), cname(3), cname(4))
 
 		// test CollectDetailed
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		cis, err = iter.CollectDetailed(context.TODO())
+		cis, err = iter.CollectDetailed(t.Context())
 		expectSuccess(t, err)
 		expectContainerInfos(t, cis, cname(1), cname(2), cname(3), cname(4))
 
 		// cleanup
 		iter = a.Containers()
 		iter.Prefix = "schwift-test-listing"
-		expectSuccess(t, iter.Foreach(context.TODO(), func(c *schwift.Container) error {
-			return c.Delete(context.TODO(), nil)
+		expectSuccess(t, iter.Foreach(t.Context(), func(c *schwift.Container) error {
+			return c.Delete(t.Context(), nil)
 		}))
 	})
 }
 
 func expectAccountHeadersCached(t *testing.T, a *schwift.Account) {
 	requestCountBefore := a.Backend().(*RequestCountingBackend).Count
-	_, err := a.Headers(context.TODO())
+	_, err := a.Headers(t.Context())
 	expectSuccess(t, err)
 	requestCountAfter := a.Backend().(*RequestCountingBackend).Count
 

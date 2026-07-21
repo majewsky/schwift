@@ -19,7 +19,6 @@
 package tests
 
 import (
-	"context"
 	"crypto/md5" //nolint:gosec // Etag uses md5
 	"crypto/rand"
 	"encoding/hex"
@@ -44,7 +43,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 
 	if stAuth == "" && stUser == "" && stKey == "" {
 		// option 1: Keystone authentication
-		provider, err := clientconfig.AuthenticatedClient(context.TODO(), nil)
+		provider, err := clientconfig.AuthenticatedClient(t.Context(), nil)
 		if err != nil {
 			t.Error("clientconfig.AuthenticatedClient returned: " + err.Error())
 			t.Error("probably missing Swift credentials (need either ST_AUTH, ST_USER, ST_KEY or OS_* variables)")
@@ -62,7 +61,7 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 			t.Error("openstack.NewClient returned: " + err.Error())
 			return
 		}
-		client, err = swauth.NewObjectStorageV1(context.TODO(), provider, swauth.AuthOpts{User: stUser, Key: stKey})
+		client, err = swauth.NewObjectStorageV1(t.Context(), provider, swauth.AuthOpts{User: stUser, Key: stKey})
 		if err != nil {
 			t.Error("swauth.NewObjectStorageV1 returned: " + err.Error())
 			return
@@ -87,19 +86,19 @@ func testWithAccount(t *testing.T, testCode func(a *schwift.Account)) {
 func testWithContainer(t *testing.T, testCode func(c *schwift.Container)) {
 	testWithAccount(t, func(a *schwift.Account) {
 		containerName := getRandomName()
-		container, err := a.Container(containerName).EnsureExists(context.TODO())
+		container, err := a.Container(containerName).EnsureExists(t.Context())
 		expectSuccess(t, err)
 
 		testCode(container)
 
 		// cleanup
-		exists, err := container.Exists(context.TODO())
+		exists, err := container.Exists(t.Context())
 		expectSuccess(t, err)
 		if exists {
-			expectSuccess(t, container.Objects().Foreach(context.TODO(), func(o *schwift.Object) error {
-				return o.Delete(context.TODO(), nil, nil)
+			expectSuccess(t, container.Objects().Foreach(t.Context(), func(o *schwift.Object) error {
+				return o.Delete(t.Context(), nil, nil)
 			}))
-			err = container.Delete(context.TODO(), nil)
+			err = container.Delete(t.Context(), nil)
 			expectSuccess(t, err)
 		}
 	})
