@@ -1,3 +1,9 @@
+# v2.2.1 (TBD)
+
+Changes:
+
+- `Account.Headers` and `Container.Headers` are now thread-safe.
+
 # v2.2.0 (2026-07-17)
 
 Changes:

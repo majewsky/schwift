@@ -21,6 +21,7 @@ package schwift
 import (
 	"context"
 	"net/http"
+	"sync"
 )
 
 // Container represents a Swift container. Instances are usually obtained by
@@ -30,7 +31,8 @@ type Container struct {
 	a    *Account
 	name string
 	// cache
-	headers *ContainerHeaders
+	headers      *ContainerHeaders
+	headersMutex sync.Mutex
 }
 
 // IsEqualTo returns true if both Container instances refer to the same container.
@@ -75,10 +77,9 @@ func (c *Container) Exists(ctx context.Context) (bool, error) {
 // has not been cached yet, a HEAD request is issued on the container.
 //
 // This operation fails with http.StatusNotFound if the container does not exist.
-//
-// WARNING: This method is not thread-safe. Calling it concurrently on the same
-// object results in undefined behavior.
 func (c *Container) Headers(ctx context.Context) (ContainerHeaders, error) {
+	c.headersMutex.Lock()
+	defer c.headersMutex.Unlock()
 	if c.headers != nil {
 		return *c.headers, nil
 	}
@@ -167,10 +168,9 @@ func (c *Container) Delete(ctx context.Context, opts *RequestOptions) error {
 
 // Invalidate clears the internal cache of this Container instance. The next call
 // to Headers() on this instance will issue a HEAD request on the container.
-//
-// WARNING: This method is not thread-safe. Calling it concurrently on the same
-// object results in undefined behavior.
 func (c *Container) Invalidate() {
+	c.headersMutex.Lock()
+	defer c.headersMutex.Unlock()
 	c.headers = nil
 }
 

@@ -36,10 +36,11 @@ type Account struct {
 	baseURL string
 	name    string
 	// cache
-	headers    *AccountHeaders
-	caps       *Capabilities
-	modifyCaps func(*Capabilities)
-	capsMutex  sync.Mutex
+	headers      *AccountHeaders
+	headersMutex sync.Mutex
+	caps         *Capabilities
+	modifyCaps   func(*Capabilities)
+	capsMutex    sync.Mutex
 }
 
 // IsEqualTo returns true if both Account instances refer to the same account.
@@ -96,10 +97,9 @@ func (a *Account) Backend() Backend {
 // has not been cached yet, a HEAD request is issued on the account.
 //
 // This operation fails with http.StatusNotFound if the account does not exist.
-//
-// WARNING: This method is not thread-safe. Calling it concurrently on the same
-// object results in undefined behavior.
 func (a *Account) Headers(ctx context.Context) (AccountHeaders, error) {
+	a.headersMutex.Lock()
+	defer a.headersMutex.Unlock()
 	if a.headers != nil {
 		return *a.headers, nil
 	}
@@ -124,10 +124,9 @@ func (a *Account) Headers(ctx context.Context) (AccountHeaders, error) {
 
 // Invalidate clears the internal cache of this Account instance. The next call
 // to Headers() on this instance will issue a HEAD request on the account.
-//
-// WARNING: This method is not thread-safe. Calling it concurrently on the same
-// object results in undefined behavior.
 func (a *Account) Invalidate() {
+	a.headersMutex.Lock()
+	defer a.headersMutex.Unlock()
 	a.headers = nil
 }
 
