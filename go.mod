@@ -1,6 +1,6 @@
 module go.xyrillian.de/schwift/v2
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/gophercloud/gophercloud/v2 v2.13.0

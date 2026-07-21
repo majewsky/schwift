@@ -21,6 +21,7 @@ package schwift
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,7 +30,6 @@ import (
 	"strings"
 
 	"go.xyrillian.de/schwift/v2/capabilities"
-	"go.xyrillian.de/schwift/v2/internal/errext"
 )
 
 // BulkUploadFormat enumerates possible archive formats for Container.BulkUpload().
@@ -216,7 +216,7 @@ func (a *Account) bulkDeleteSingle(ctx context.Context, objects []*Object, conta
 			numNotFound++
 			return nil
 		}
-		if statusErr, ok := errext.As[UnexpectedStatusCodeError](err); ok {
+		if statusErr, ok := errors.AsType[UnexpectedStatusCodeError](err); ok {
 			errs = append(errs, BulkObjectError{
 				ContainerName: containerName,
 				ObjectName:    objectName,

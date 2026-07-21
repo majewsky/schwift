@@ -21,11 +21,11 @@ package tests
 import (
 	"archive/tar"
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 
 	"go.xyrillian.de/schwift/v2"
-	"go.xyrillian.de/schwift/v2/internal/errext"
 )
 
 func TestBulkUploadSuccess(t *testing.T) {
@@ -65,7 +65,7 @@ func TestBulkUploadArchiveError(t *testing.T) {
 		)
 		expectInt(t, n, 0)
 		expectError(t, err, "400 Bad Request: Invalid Tar File: truncated header")
-		bulkErr, _ := errext.As[schwift.BulkError](err)
+		bulkErr, _ := errors.AsType[schwift.BulkError](err)
 		expectInt(t, bulkErr.StatusCode, 400)
 		expectString(t, bulkErr.OverallError, "Invalid Tar File: truncated header")
 		expectInt(t, len(bulkErr.ObjectErrors), 0)
@@ -91,7 +91,7 @@ func TestBulkUploadObjectError(t *testing.T) {
 		)
 		expectInt(t, n, 1)
 		expectError(t, err, "400 Bad Request (+1 object errors)")
-		bulkErr, _ := errext.As[schwift.BulkError](err)
+		bulkErr, _ := errors.AsType[schwift.BulkError](err)
 		expectInt(t, len(bulkErr.ObjectErrors), 1)
 		expectString(t, bulkErr.ObjectErrors[0].ContainerName, c.Name())
 		expectInt(t, bulkErr.ObjectErrors[0].StatusCode, 400)

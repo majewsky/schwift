@@ -24,8 +24,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"go.xyrillian.de/schwift/v2/internal/errext"
 )
 
 var (
@@ -150,7 +148,7 @@ func (e BulkError) Error() string {
 //
 // It is safe to pass a nil error, in which case Is() always returns false.
 func Is(err error, code int) bool {
-	if e, ok := errext.As[UnexpectedStatusCodeError](err); ok {
+	if e, ok := errors.AsType[UnexpectedStatusCodeError](err); ok {
 		return e.ActualResponse.StatusCode == code
 	}
 	return false
