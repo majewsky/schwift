@@ -76,7 +76,7 @@ func (a *Account) BulkUpload(ctx context.Context, uploadPath string, format Bulk
 	}
 
 	req := Request{
-		Method:            "PUT",
+		Method:            http.MethodPut,
 		Body:              contents,
 		Options:           cloneRequestOptions(opts, nil),
 		ExpectStatusCodes: []int{200},
@@ -259,7 +259,7 @@ func (a *Account) bulkDeleteSingle(ctx context.Context, objects []*Object, conta
 // account.Capabilities.BulkDelete.MaximumDeletesPerRequest`.
 func (a *Account) bulkDelete(ctx context.Context, names []string, opts *RequestOptions) (numDeleted, numNotFound int, err error) {
 	req := Request{
-		Method:            "DELETE",
+		Method:            http.MethodDelete,
 		Body:              strings.NewReader(strings.Join(names, "\n") + "\n"),
 		Options:           cloneRequestOptions(opts, nil),
 		ExpectStatusCodes: []int{200},

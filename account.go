@@ -105,7 +105,7 @@ func (a *Account) Headers(ctx context.Context) (AccountHeaders, error) {
 	}
 
 	resp, err := Request{
-		Method:            "HEAD",
+		Method:            http.MethodHead,
 		ExpectStatusCodes: []int{204},
 	}.Do(ctx, a.backend)
 	if err != nil {
@@ -136,7 +136,7 @@ func (a *Account) Invalidate() {
 // A successful POST request implies Invalidate() since it may change metadata.
 func (a *Account) Update(ctx context.Context, headers AccountHeaders, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "POST",
+		Method:            http.MethodPost,
 		Options:           cloneRequestOptions(opts, headers.Headers),
 		ExpectStatusCodes: []int{204},
 	}.Do(ctx, a.backend)
@@ -153,7 +153,7 @@ func (a *Account) Update(ctx context.Context, headers AccountHeaders, opts *Requ
 // A successful PUT request implies Invalidate() since it may change metadata.
 func (a *Account) Create(ctx context.Context, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "PUT",
+		Method:            http.MethodPut,
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,

@@ -85,7 +85,7 @@ func (c *Container) Headers(ctx context.Context) (ContainerHeaders, error) {
 	}
 
 	resp, err := Request{
-		Method:            "HEAD",
+		Method:            http.MethodHead,
 		ContainerName:     c.name,
 		ExpectStatusCodes: []int{204},
 	}.Do(ctx, c.a.backend)
@@ -111,7 +111,7 @@ func (c *Container) Headers(ctx context.Context) (ContainerHeaders, error) {
 // A successful POST request implies Invalidate() since it may change metadata.
 func (c *Container) Update(ctx context.Context, headers ContainerHeaders, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "POST",
+		Method:            http.MethodPost,
 		ContainerName:     c.name,
 		Options:           cloneRequestOptions(opts, headers.Headers),
 		ExpectStatusCodes: []int{204},
@@ -131,7 +131,7 @@ func (c *Container) Update(ctx context.Context, headers ContainerHeaders, opts *
 // A successful PUT request implies Invalidate() since it may change metadata.
 func (c *Container) Create(ctx context.Context, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "PUT",
+		Method:            http.MethodPut,
 		ContainerName:     c.name,
 		Options:           opts,
 		ExpectStatusCodes: []int{201, 202},
@@ -154,7 +154,7 @@ func (c *Container) Create(ctx context.Context, opts *RequestOptions) error {
 // A successful DELETE request implies Invalidate().
 func (c *Container) Delete(ctx context.Context, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "DELETE",
+		Method:            http.MethodDelete,
 		ContainerName:     c.name,
 		Options:           opts,
 		ExpectStatusCodes: []int{204},
@@ -183,7 +183,7 @@ func (c *Container) Invalidate() {
 //	container, err := account.Container("documents").EnsureExists()
 func (c *Container) EnsureExists(ctx context.Context) (*Container, error) {
 	resp, err := Request{
-		Method:            "PUT",
+		Method:            http.MethodPut,
 		ContainerName:     c.name,
 		ExpectStatusCodes: []int{201, 202},
 		DrainResponseBody: true,

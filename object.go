@@ -126,7 +126,7 @@ func (o *Object) Headers(ctx context.Context) (ObjectHeaders, error) {
 
 func (o *Object) fetchHeaders(ctx context.Context, opts *RequestOptions) (*ObjectHeaders, error) {
 	resp, err := Request{
-		Method:        "HEAD",
+		Method:        http.MethodHead,
 		ContainerName: o.c.name,
 		ObjectName:    o.name,
 		Options:       opts,
@@ -152,7 +152,7 @@ func (o *Object) fetchHeaders(ctx context.Context, opts *RequestOptions) (*Objec
 // A successful POST request implies Invalidate() since it may change metadata.
 func (o *Object) Update(ctx context.Context, headers ObjectHeaders, opts *RequestOptions) error {
 	resp, err := Request{
-		Method:            "POST",
+		Method:            http.MethodPost,
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           cloneRequestOptions(opts, headers.Headers),
@@ -263,7 +263,7 @@ func (o *Object) Upload(ctx context.Context, content io.Reader, opts *UploadOpti
 	}
 
 	resp, err := Request{
-		Method:            "PUT",
+		Method:            http.MethodPut,
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           ropts,
@@ -415,7 +415,7 @@ func (o *Object) Delete(ctx context.Context, opts *DeleteOptions, ropts *Request
 	}
 
 	resp, err := Request{
-		Method:            "DELETE",
+		Method:            http.MethodDelete,
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           ropts,
@@ -455,7 +455,7 @@ func (o *Object) Invalidate() {
 // object results in undefined behavior.
 func (o *Object) Download(ctx context.Context, opts *RequestOptions) DownloadedObject {
 	resp, err := Request{
-		Method:            "GET",
+		Method:            http.MethodGet,
 		ContainerName:     o.c.name,
 		ObjectName:        o.name,
 		Options:           opts,
@@ -641,7 +641,7 @@ func (o *Object) URL() (string, error) {
 //	err := c.Update(ctx, hdr, nil)
 //
 //	//...we can use it to generate temporary URLs.
-//	url := o.TempURL(ctx, key, "GET", time.Now().Add(10 * time.Minute))
+//	url := o.TempURL(ctx, key, http.MethodGet, time.Now().Add(10 * time.Minute))
 //	resp, err := http.Get(url)
 //	//This time, resp.StatusCode == 200 because the URL includes a token.
 func (o *Object) TempURL(ctx context.Context, key, method string, expires time.Time) (string, error) {

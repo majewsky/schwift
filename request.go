@@ -59,7 +59,7 @@ func cloneRequestOptions(orig *RequestOptions, additional Headers) *RequestOptio
 
 // Request contains the parameters that can be set in a request to the Swift API.
 type Request struct {
-	Method        string // "GET", "HEAD", "PUT", "POST" or "DELETE"
+	Method        string // e.g. http.MethodGet, or a string literal like "COPY"
 	ContainerName string // empty for requests on accounts
 	ObjectName    string // empty for requests on accounts/containers
 	Options       *RequestOptions

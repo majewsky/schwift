@@ -78,7 +78,7 @@ type iteratorBase struct {
 
 func (b *iteratorBase) request(limit int, detailed bool) Request {
 	r := Request{
-		Method:        "GET",
+		Method:        http.MethodGet,
 		ContainerName: b.i.getContainerName(),
 		Options:       cloneRequestOptions(b.i.getOptions(), nil),
 	}
