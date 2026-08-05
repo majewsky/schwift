@@ -1,3 +1,12 @@
+<!--
+SPDX-FileCopyrightText: 2026 Stefan Majewsky <majewsky@gmx.net>
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Note to releaser
+
+When cutting a new version, update the version string in `version.go`.
+
 # v2.2.1 (2026-07-21)
 
 Changes:
