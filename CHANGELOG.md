@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 When cutting a new version, update the version string in `version.go`.
 
-# v2.2.2 (TBD)
+# v2.2.2 (2026-11-10)
 
 Changes:
 
